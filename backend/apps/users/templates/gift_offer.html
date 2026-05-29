@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Votre cadeau exclusif SmartShop{% endblock %}
+{% block content %}
+<p style="margin: 0 0 16px; font-size: 15px; color: #333">
+  Bonjour <strong>{{ first_name }}</strong> 👋
+</p>
+<p style="margin: 0 0 20px; font-size: 15px; color: #333">
+  Chez
+  <strong>SmartShop<sup style="color: #ff9900; font-size: 10px">ML</sup></strong
+  >, nous tenons à récompenser votre fidélité. Nous avons une
+  <strong>offre exclusive</strong> spécialement pour vous !
+</p>
+
+<!-- Bloc cadeau -->
+<div
+  style="
+    background: linear-gradient(135deg, #fff8e7 0%, #fff3cd 100%);
+    border: 2px solid #ff9900;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    margin: 20px 0;
+  "
+>
+  <div style="font-size: 40px; margin-bottom: 8px">{{ gift_icon }}</div>
+  <p style="margin: 0 0 6px; font-size: 22px; font-weight: 900; color: #b45309">
+    {{ gift_label }}
+  </p>
+  <p style="margin: 0; font-size: 14px; color: #555">{{ gift_details }}</p>
+  {% if valid_days %}
+  <p style="margin: 12px 0 0; font-size: 12px; color: #888">
+    ⏳ Valable pendant <strong>{{ valid_days }} jours</strong> à compter de la
+    réception.
+  </p>
+  {% endif %}
+</div>
+
+<!-- Boutons Accepter / Refuser -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin: 28px 0"
+>
+  <tr>
+    <td align="center" style="padding-right: 10px">
+      <a
+        href="{{ accept_url }}"
+        style="
+          display: inline-block;
+          padding: 13px 30px;
+          background-color: #22c55e;
+          color: #ffffff;
+          text-decoration: none;
+          border-radius: 6px;
+          font-size: 15px;
+          font-weight: bold;
+        "
+      >
+        ✅ J'accepte !
+      </a>
+    </td>
+    <td align="center" style="padding-left: 10px">
+      <a
+        href="{{ decline_url }}"
+        style="
+          display: inline-block;
+          padding: 13px 30px;
+          background-color: #e5e7eb;
+          color: #374151;
+          text-decoration: none;
+          border-radius: 6px;
+          font-size: 15px;
+        "
+      >
+        Non merci
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center">
+  Si les boutons ne fonctionnent pas, copiez ce lien dans votre navigateur :<br />
+  <a href="{{ accept_url }}" style="color: #ff9900; word-break: break-all"
+    >{{ accept_url }}</a
+  >
+</p>
+{% endblock %}

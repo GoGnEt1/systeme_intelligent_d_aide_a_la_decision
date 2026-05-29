@@ -1,0 +1,206 @@
+[
+  {
+    "model": "products.category",
+    "pk": 1,
+    "fields": {
+      "name": "Électronique",
+      "slug": "electronique",
+      "description": "Ordinateurs, smartphones, et accessoires high-tech",
+      "parent": null,
+      "is_active": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "products.category",
+    "pk": 2,
+    "fields": {
+      "name": "Mode",
+      "slug": "mode",
+      "description": "Vêtements, chaussures et accessoires",
+      "parent": null,
+      "is_active": true,
+      "order": 2
+    }
+  },
+  {
+    "model": "products.category",
+    "pk": 3,
+    "fields": {
+      "name": "Maison & Cuisine",
+      "slug": "maison-cuisine",
+      "description": "Mobilier, décoration et ustensiles",
+      "parent": null,
+      "is_active": true,
+      "order": 3
+    }
+  },
+  {
+    "model": "products.category",
+    "pk": 4,
+    "fields": {
+      "name": "Ordinateurs & Portables",
+      "slug": "ordinateurs-portables",
+      "description": "",
+      "parent": 1,
+      "is_active": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "products.category",
+    "pk": 5,
+    "fields": {
+      "name": "Smartphones & Téléphonie",
+      "slug": "smartphones",
+      "description": "",
+      "parent": 1,
+      "is_active": true,
+      "order": 2
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 1,
+    "fields": {
+      "name": "Apple MacBook Air M2 13\" 8Go/256Go Midnight",
+      "slug": "macbook-air-m2-midnight",
+      "sku": "APPL-MBA-M2-256",
+      "description": "Le MacBook Air le plus fin jamais conçu. Puce M2 révolutionnaire. Jusqu'à 18 heures d'autonomie. Design entièrement repensé avec encoche et MagSafe.",
+      "category": 4,
+      "price": "1149.00",
+      "original_price": "1699.00",
+      "stock_quantity": 45,
+      "is_featured": true,
+      "status": "ACTIVE",
+      "view_count": 1250,
+      "purchase_count": 89
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 2,
+    "fields": {
+      "name": "Samsung Galaxy S24 Ultra 256Go Titanium Black",
+      "slug": "samsung-galaxy-s24-ultra-256",
+      "sku": "SAM-S24U-256-BK",
+      "description": "L'IA dans votre poche. Galaxy S24 Ultra avec S Pen intégré, appareil photo 200MP et titanium résistant.",
+      "category": 5,
+      "price": "999.99",
+      "original_price": null,
+      "stock_quantity": 78,
+      "is_featured": true,
+      "status": "ACTIVE",
+      "view_count": 2340,
+      "purchase_count": 156
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 3,
+    "fields": {
+      "name": "Sony WH-1000XM5 Casque Bluetooth Noir",
+      "slug": "sony-wh-1000xm5-noir",
+      "sku": "SONY-WH-XM5-BK",
+      "description": "La meilleure réduction de bruit du secteur. Jusqu'à 30h d'autonomie. 8 micros et 2 processeurs pour une qualité sonore exceptionnelle.",
+      "category": 1,
+      "price": "279.00",
+      "original_price": "340.00",
+      "stock_quantity": 32,
+      "is_featured": true,
+      "status": "ACTIVE",
+      "view_count": 890,
+      "purchase_count": 67
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 4,
+    "fields": {
+      "name": "Nike Air Max 270 React Blanc/Noir Homme",
+      "slug": "nike-air-max-270-react-blanc",
+      "sku": "NIKE-AM270-WHT-42",
+      "description": "La plus grande unité Air Max jamais conçue offre un amorti exceptionnel pour un confort toute la journée.",
+      "category": 2,
+      "price": "89.99",
+      "original_price": "149.99",
+      "stock_quantity": 120,
+      "is_featured": false,
+      "status": "ACTIVE",
+      "view_count": 456,
+      "purchase_count": 234
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 5,
+    "fields": {
+      "name": "Nespresso Vertuo Pop Machine à café Mango Yellow",
+      "slug": "nespresso-vertuo-pop-mango",
+      "sku": "NESP-VPOP-MNG",
+      "description": "La machine la plus compacte de la gamme Vertuo. 5 tailles de tasses. Technologie Centrifusion pour un café parfait.",
+      "category": 3,
+      "price": "59.99",
+      "original_price": "79.99",
+      "stock_quantity": 200,
+      "is_featured": true,
+      "status": "ACTIVE",
+      "view_count": 670,
+      "purchase_count": 445
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 6,
+    "fields": {
+      "name": "LG UltraGear 27GP850-B 27\" QHD 165Hz Nano IPS",
+      "slug": "lg-ultragear-27gp850-27-qhd",
+      "sku": "LG-27GP850-BK",
+      "description": "Écran gaming 27\" QHD Nano IPS, 165Hz, 1ms GTG. Compatible NVIDIA G-SYNC et AMD FreeSync Premium.",
+      "category": 1,
+      "price": "349.99",
+      "original_price": "429.99",
+      "stock_quantity": 55,
+      "is_featured": false,
+      "status": "ACTIVE",
+      "view_count": 780,
+      "purchase_count": 43
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 7,
+    "fields": {
+      "name": "Apple Watch Series 9 GPS 45mm Starlight",
+      "slug": "apple-watch-series-9-gps-45mm",
+      "sku": "APPL-WS9-45-SL",
+      "description": "Toujours aussi avancée. Apple Watch Series 9 avec puce S9 SiP et nouvelle fonction Double Tap.",
+      "category": 1,
+      "price": "449.00",
+      "original_price": null,
+      "stock_quantity": 67,
+      "is_featured": true,
+      "status": "ACTIVE",
+      "view_count": 1100,
+      "purchase_count": 78
+    }
+  },
+  {
+    "model": "products.product",
+    "pk": 8,
+    "fields": {
+      "name": "Canon EOS R50 Kit 18-45mm Blanc Hybride",
+      "slug": "canon-eos-r50-kit-blanc",
+      "sku": "CAN-EOSR50-W-KIT",
+      "description": "Appareil photo hybride compact 24.2 MP. Autofocus Dual Pixel CMOS AF II. Vidéo 4K. Design léger idéal pour les débutants.",
+      "category": 1,
+      "price": "699.00",
+      "original_price": "929.00",
+      "stock_quantity": 28,
+      "is_featured": false,
+      "status": "ACTIVE",
+      "view_count": 540,
+      "purchase_count": 31
+    }
+  }
+]

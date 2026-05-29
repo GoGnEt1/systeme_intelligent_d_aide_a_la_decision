@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Nouvelle date de livraison — {{ order.order_number }}{% endblock %}
+{% block content %}
+<div style="text-align: center; margin-bottom: 24px">
+  <!-- <div style="font-size:48px; margin-bottom:12px;">📅</div> -->
+  <h1 style="color: #232f3e; font-size: 21px; margin: 0">
+    Nouvelle date de livraison
+  </h1>
+  <p style="color: #555; font-size: 14px; margin-top: 8px">
+    Bonjour <strong>{{ user.first_name }}</strong>,<br />
+    nous n'avons pas pu livrer votre commande lors de notre premier passage. Une
+    nouvelle tentative est planifiée.
+  </p>
+</div>
+
+<div
+  style="
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  "
+>
+  <table style="width: 100%">
+    <tr>
+      <td style="color: #856404; padding: 4px 0">
+        <strong>N° commande</strong>
+      </td>
+      <td style="text-align: right; font-weight: bold">
+        {{ order.order_number }}
+      </td>
+    </tr>
+    <tr>
+      <td style="color: #856404; padding: 4px 0">
+        <strong>Nouvelle date prévue</strong>
+      </td>
+      <td style="text-align: right; font-weight: bold; color: #0d6efd">
+        {{ order.delivery_date|date:"d/m/Y" }}
+      </td>
+    </tr>
+    <tr>
+      <td style="color: #856404; padding: 4px 0"><strong>Tentative</strong></td>
+      <td style="text-align: right">{{ order.delivery_attempts }}/2</td>
+    </tr>
+  </table>
+</div>
+
+<div
+  style="
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+  "
+>
+  <p style="margin: 0; color: #555">
+    <strong>Important :</strong> veuillez vous assurer d'être disponible à
+    l'adresse indiquée le {{ order.delivery_date|date:"d/m/Y" }}. <br /><br />
+    Adresse de livraison :
+    <strong
+      >{{ order.shipping_address_line|default:"—" }}, {{ order.shipping_city|default:"—" }}</strong
+    >
+    <br />
+    Téléphone : <strong>{{ order.shipping_phone|default:"—" }}</strong>
+  </p>
+</div>
+
+<p
+  style="font-size: 12px; color: #dc3545; margin-top: 16px; text-align: center"
+>
+  En cas de nouvelle absence, la livraison de cette commande sera annulée
+  définitivement.
+</p>
+
+<div style="text-align: center; margin-top: 20px">
+  <a
+    href="{{ base_url }}orders"
+    style="
+      background: #ff9900;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 13px;
+    "
+  >
+    Voir ma commande
+  </a>
+</div>
+{% endblock %}

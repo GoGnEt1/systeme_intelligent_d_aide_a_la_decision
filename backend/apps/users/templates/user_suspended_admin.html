@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Client suspendu — SmartShop{% endblock %}
+{% block content %}
+
+<div style="text-align: center; margin-bottom: 24px">
+  <!-- <div style="font-size:48px; margin-bottom:12px;">🚫</div> -->
+  <h1 style="color: #dc2626; font-size: 20px; margin: 0">
+    Compte client suspendu
+  </h1>
+  <p style="color: #555; font-size: 14px; margin-top: 8px">
+    Bonjour <strong>{{ admin.first_name }}</strong>,<br />
+    un compte client vient d'être automatiquement suspendu suite à des absences
+    répétées.
+  </p>
+</div>
+
+<div
+  style="
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #991b1b;
+  "
+>
+  <table style="width: 100%">
+    <tr>
+      <td style="padding: 4px 0"><strong>Client</strong></td>
+      <td style="text-align: right; font-weight: bold">
+        {{ client.get_full_name }} ({{ client.email }})
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0"><strong>Téléphone</strong></td>
+      <td style="text-align: right">
+        {{ client.phone|default:"Non renseigné" }}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0"><strong>Suspendu jusqu'au</strong></td>
+      <td style="text-align: right; font-weight: bold; color: #dc2626">
+        {{ client.suspended_until|date:"d/m/Y à H:i" }}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0"><strong>Durée</strong></td>
+      <td style="text-align: right">90 jours</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0"><strong>Commande déclenchante</strong></td>
+      <td style="text-align: right; font-family: monospace">
+        {{ order.order_number }}
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div
+  style="
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+    color: #555;
+  "
+>
+  <p style="margin: 0; font-weight: bold; color: #374151; margin-bottom: 6px">
+    Raison de la suspension :
+  </p>
+  <p style="margin: 0">
+    Le client a accumulé <strong>3 ou plus</strong> commandes avec des absences
+    répétées à la livraison (champ <code>no_more_delivery = True</code>). Son
+    compte est désormais suspendu pendant 90 jours : il ne peut plus passer de
+    nouvelles commandes.
+  </p>
+</div>
+
+<div
+  style="
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #166534;
+  "
+>
+  La suspension est levée automatiquement à l'expiration. Si vous souhaitez
+  lever la suspension manuellement, modifiez <code>suspended_until</code>
+  dans l'interface admin Django.
+</div>
+
+<div style="text-align: center; margin-top: 20px">
+  <a
+    href="{{ base_url }}dashboards"
+    style="
+      background: #232f3e;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 13px;
+    "
+  >
+    Voir le tableau de bord
+  </a>
+</div>
+
+{% endblock %}

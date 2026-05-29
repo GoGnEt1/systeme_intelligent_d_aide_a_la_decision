@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Livraison impossible — {{ order.order_number }}{% endblock %}
+{% block content %}
+<div style="text-align: center; margin-bottom: 24px">
+  <!-- <div style="font-size:48px; margin-bottom:12px;">⛔</div> -->
+  <h1 style="color: #dc2626; font-size: 21px; margin: 0">
+    Livraison impossible
+  </h1>
+  <p style="color: #555; font-size: 14px; margin-top: 8px">
+    Bonjour <strong>{{ user.first_name }}</strong>,<br />
+    après 2 tentatives de livraison infructueuses, votre commande ne peut plus
+    être expédiée.
+  </p>
+</div>
+
+<div
+  style="
+    background: #f8d7da;
+    border: 1px solid #f5c2c7;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #842029;
+  "
+>
+  <table style="width: 100%">
+    <tr>
+      <td style="padding: 4px 0"><strong>N° commande</strong></td>
+      <td style="text-align: right">{{ order.order_number }}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0"><strong>Tentatives effectuées</strong></td>
+      <td style="text-align: right">2/2</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0"><strong>Montant</strong></td>
+      <td style="text-align: right">
+        {{ order.total_amount|floatformat:2 }} DT
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div
+  style="
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+    color: #555;
+  "
+>
+  <p style="margin: 0">
+    Pour toute réclamation ou pour discuter d'une alternative, contactez notre
+    service client.<br />
+    Si vous pensez qu'il s'agit d'une erreur, répondez à cet email ou
+    appelez-nous.
+  </p>
+</div>
+
+<div style="text-align: center; margin-top: 20px">
+  <a
+    href="{{ base_url }}orders"
+    style="
+      background: #232f3e;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 13px;
+    "
+  >
+    Voir mes commandes
+  </a>
+</div>
+{% endblock %}

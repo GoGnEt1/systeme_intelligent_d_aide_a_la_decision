@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* ============================================================
+   SmartShop — Global Styles
+   palette et typographie fidèles
+   ============================================================ */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: "Noto Sans", Arial, sans-serif;
+    font-size: 14px;
+    color: #0f1111;
+    background-color: #eaeded;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  a {
+    color: #007185;
+    text-decoration: none;
+  }
+  a:hover {
+    color: #c45500;
+    /* text-decoration: underline; */
+  }
+
+  /* Scrollbar custom */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+  }
+}
+
+@layer components {
+  /* ── Boutons Gognet ── */
+  .btn-primary {
+    @apply bg-gradient-to-b from-[#FFD814] to-[#F7CA00] border border-[#FCD200]
+           text-[#0F1111] font-medium py-1.5 px-4 rounded-lg cursor-pointer
+           hover:from-[#F7CA00] hover:to-[#DDB200] transition-all duration-150
+           active:scale-95 text-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-b from-[#FFA41C] to-[#FF8F00] border border-[#E07B00]
+           text-white font-medium py-1.5 px-4 rounded-lg cursor-pointer
+           hover:from-[#FF8F00] hover:to-[#E07B00] transition-all duration-150
+           active:scale-95 text-sm;
+  }
+
+  .btn-outline {
+    @apply border border-[#D5D9D9] bg-white text-[#0F1111] font-medium
+           py-1.5 px-4 rounded-lg cursor-pointer hover:bg-[#F7FAFA]
+           hover:border-[#007185] transition-all duration-150 text-sm;
+  }
+
+  /* ── Cartes produit ── */
+  .product-card {
+    @apply bg-white rounded p-3 cursor-pointer border border-transparent
+           hover:border-[#D5D9D9] hover:shadow-product-hover transition-all
+           duration-200 relative;
+  }
+
+  /* ── Widget carte (sections homepage) ── */
+  .widget-card {
+    @apply bg-white rounded shadow-card p-5 animate-fade-up;
+  }
+
+  /* ── Badges ── */
+  .badge-discount {
+    @apply absolute top-2 left-2 bg-[#B12704] text-white text-[10px]
+           font-bold px-1.5 py-0.5 rounded-sm;
+  }
+  .badge-ml {
+    @apply absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-indigo-500
+           text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full;
+  }
+  .badge-prime {
+    @apply text-[#00A8E1] text-[11px] font-bold;
+  }
+
+  /* ── Input champ ── */
+  .input-field {
+    @apply w-full border border-[#888C8C] rounded px-3 py-2 text-[15px]
+           focus:outline-none focus:ring-2 focus:ring-[#E77600]
+           focus:border-[#E77600] transition-all;
+  }
+
+  /* ── Stars ── */
+  .stars {
+    @apply flex items-center gap-0.5 text-[#FFA41C] text-sm;
+  }
+
+  /* ── Section header ── */
+  .section-title {
+    @apply text-xl font-bold text-[#0F1111] mb-4;
+  }
+
+  /* ── Nav item (subnav) ── */
+  .nav-item {
+    @apply text-white px-2.5 py-1.5 text-[15px] whitespace-nowrap cursor-pointer
+          hover:text-gognet-orange hover:underline transition-all duration-100;
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

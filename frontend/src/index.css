@@ -1,0 +1,206 @@
+/* ============================================================
+   GoGNet SmartShop — Feuille de styles principale
+   Typographie : Syne (titres) + DM Sans (corps)
+   Palette : Marine #0D1B2A · Corail #FF6B35 · Teal #0A8EA0
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ──────────────────────────────────────────────────── */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-size: 15px;
+    color: #0d1b2a;
+    background-color: #f5f7fa;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Syne", system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  a {
+    color: #0a8ea0;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  a:hover {
+    color: #076e7d;
+  }
+
+  /* Scrollbar personnalisée */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f5f7fa;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Masquer scrollbar horizontale (mobile subnav) */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: #ff6b35;
+    color: white;
+  }
+}
+
+/* ── Composants réutilisables ──────────────────────────────── */
+
+@layer components {
+  /* ── Boutons ─────────────────────────────────────────────── */
+
+  /* CTA principal — corail */
+  .btn-primary {
+    @apply bg-gognet-coral hover:bg-gognet-coral-dark
+           text-white font-semibold
+           py-2.5 px-6 rounded-xl cursor-pointer
+           transition-all duration-150 active:scale-95
+           text-[14px] inline-flex items-center justify-center gap-2
+           shadow-sm hover:shadow-md;
+  }
+
+  /* CTA secondaire — teal */
+  .btn-secondary {
+    @apply bg-gognet-teal hover:bg-gognet-teal-dark
+           text-white font-semibold
+           py-2.5 px-6 rounded-xl cursor-pointer
+           transition-all duration-150 active:scale-95
+           text-[14px] inline-flex items-center justify-center gap-2;
+  }
+
+  /* Bouton outline neutre */
+  .btn-outline {
+    @apply border border-gognet-border bg-white text-gognet-dark
+           hover:border-gognet-teal hover:text-gognet-teal
+           font-medium py-2 px-5 rounded-xl cursor-pointer
+           transition-all duration-150 text-[14px]
+           inline-flex items-center justify-center gap-2;
+  }
+
+  /* Bouton ghost */
+  .btn-ghost {
+    @apply bg-transparent text-gognet-gray hover:text-gognet-coral
+           hover:bg-gognet-coral-soft
+           font-medium py-2 px-4 rounded-lg cursor-pointer
+           transition-all duration-150 text-[14px];
+  }
+
+  /* ── Cartes produit ──────────────────────────────────────── */
+  .product-card {
+    @apply bg-white rounded-2xl cursor-pointer
+           border border-gognet-border
+           hover:border-gognet-coral/30
+           hover:shadow-product-hover
+           transition-all duration-200 relative overflow-hidden;
+  }
+
+  /* ── Navigation principale ───────────────────────────────── */
+  .nav-item {
+    @apply text-white/80 hover:text-white hover:bg-white/10
+           text-[13px] font-medium px-3 py-1.5 rounded-lg
+           transition-all duration-100 whitespace-nowrap cursor-pointer;
+  }
+
+  /* ── Badge ML ──────────────────────────────────────────────── */
+  .badge-ml {
+    @apply bg-gognet-coral/10 border border-gognet-coral/30
+           text-gognet-coral text-[10px] font-bold
+           px-2 py-0.5 rounded-full uppercase tracking-wider;
+  }
+
+  /* ── Section header ─────────────────────────────────────── */
+  .section-title {
+    @apply font-display text-[20px] font-bold text-gognet-dark
+           flex items-center gap-2;
+  }
+
+  /* ── Input ────────────────────────────────────────────────── */
+  .input-field {
+    @apply w-full border border-gognet-border rounded-xl
+           px-4 py-2.5 text-[14px] text-gognet-dark
+           placeholder:text-gognet-muted
+           focus:outline-none focus:border-gognet-teal
+           focus:ring-2 focus:ring-gognet-teal/20
+           bg-white transition-all duration-150;
+  }
+
+  /* ── Skeleton shimmer ────────────────────────────────────── */
+  .skeleton {
+    @apply bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200
+           rounded-lg animate-shimmer;
+    background-size: 200% 100%;
+  }
+
+  /* ── Admin panel ─────────────────────────────────────────── */
+  .admin-card {
+    @apply bg-white rounded-2xl border border-gognet-border
+           shadow-card p-5;
+  }
+
+  .admin-stat {
+    @apply admin-card hover:shadow-card-hover transition-shadow duration-200
+           relative overflow-hidden;
+  }
+}
+
+/* ── Utilitaires supplémentaires ───────────────────────────── */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .font-display {
+    font-family: "Syne", system-ui, sans-serif;
+  }
+  .gradient-coral {
+    background: linear-gradient(135deg, #ff6b35 0%, #ff9a6c 100%);
+  }
+  .gradient-navy {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b2a3b 100%);
+  }
+  .gradient-teal {
+    background: linear-gradient(135deg, #0a8ea0 0%, #0cbbcc 100%);
+  }
+}

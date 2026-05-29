@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #c0ccdd;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      table {
+        vertical-align: center;
+        border: none;
+      }
+      .td1 {
+        padding: 20px 0;
+        vertical-align: center;
+      }
+      .td1 table {
+        width: 600px;
+        margin: 0 auto;
+        /* border-collapse: collapse; */
+        background-color: #313131;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .ap_name {
+        vertical-align: center;
+        background-color: #eaf0f6;
+        padding: 20px;
+        text-align: center;
+      }
+      .ap_name h2 {
+        color: #333;
+        font-size: 20px;
+        font-weight: bold;
+        margin: 0;
+        text-transform: uppercase;
+      }
+      .content {
+        padding: 30px;
+        color: #333;
+      }
+      .content .p1 {
+        margin: 0 0 15px 0;
+        font-size: 16px;
+      }
+      .content .p1 {
+        font-size: 15px;
+      }
+      .content .p3 {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c5282;
+        text-align: center;
+        margin: 30px 0;
+      }
+      .content .lien {
+        text-align: center;
+        margin: 25px 0;
+      }
+      .content .lien a {
+        display: inline-block;
+        padding: 12px 20px;
+        background-color: #ff9900;
+        color: #131921;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 15px;
+      }
+      .content .lien a:hover {
+        background-color: #e07b00;
+      }
+      .footer {
+        background-color: #eaf0f6;
+        padding: 15px;
+        color: #555;
+        text-align: center;
+        font-size: 12px;
+        vertical-align: center;
+      }
+      .content .avertissement {
+        margin: 30px 0 0 0;
+        font-size: 13px;
+        color: #777;
+      }
+    </style>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f2;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background: #f2f2f2; padding: 30px 0"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              background: #ffffff;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            "
+          >
+            {# ── Header ── #}
+            <tr>
+              <td
+                style="
+                  background: #232f3e;
+                  padding: 20px 30px;
+                  text-align: center;
+                "
+              >
+                <h1
+                  style="
+                    margin: 0;
+                    color: #ffffff;
+                    font-size: 22px;
+                    letter-spacing: 1px;
+                  "
+                >
+                  <span style="color: #ff9900">Smart</span>Shop
+                  <sub style="font-size: 12px; color: #ff9900; font-weight: 900"
+                    >ML</sub
+                  >
+                </h1>
+                <p style="margin: 4px 0 0; color: #aaaaaa; font-size: 12px">
+                  Système intelligent d'aide à la décision e-commerce
+                </p>
+              </td>
+            </tr>
+
+            {# ── Contenu ── #}
+            <tr>
+              <td style="padding: 30px">
+                <!-- Contenu du message -->
+                {% block content %}{% endblock %}
+                <!-- Fin du contenu du message -->
+              </td>
+            </tr>
+
+            {# ── Footer ── #}
+            <tr>
+              <td
+                style="
+                  background: #f8f8f8;
+                  border-top: 1px solid #eeeeee;
+                  padding: 16px 30px;
+                  text-align: center;
+                "
+              >
+                <p style="margin: 0; font-size: 11px; color: #999999">
+                  &copy; {{ year }} SMARTSHOP ML. Tous droits reservés
+                </p>
+                <p style="margin: 8px 0 0; font-size: 11px">
+                  <a
+                    href="{{ base_url }}"
+                    style="color: #ff9900; text-decoration: none"
+                  >
+                    Visiter SmartShop
+                  </a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

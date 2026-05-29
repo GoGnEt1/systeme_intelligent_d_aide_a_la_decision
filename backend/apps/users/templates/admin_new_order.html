@@ -1,0 +1,200 @@
+{% extends "base.html" %} {% block title %}Nouvelle commande {{
+order.order_number }}{% endblock %} {% block content %}
+<div
+  style="
+    background: #232f3e;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+  "
+>
+  <h1 style="color: #ff9900; font-size: 20px; margin: 0">
+    Nouvelle commande reçue
+  </h1>
+  <p style="color: #ccc; margin: 6px 0 0; font-size: 13px">
+    {{ order.created_at|date:"d/m/Y à H:i" }}
+  </p>
+</div>
+
+<!-- Infos commande -->
+<div
+  style="
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  "
+>
+  <table style="width: 100%">
+    <tr>
+      <td style="color: #555; padding: 3px 0; width: 40%">N° commande</td>
+      <td style="font-weight: bold">{{ order.order_number }}</td>
+    </tr>
+    <tr>
+      <td style="color: #555; padding: 3px 0">Client</td>
+      <td>{{ order.user.get_full_name }} ({{ order.user.email }})</td>
+    </tr>
+    <tr>
+      <td style="color: #555; padding: 3px 0">Téléphone</td>
+      <td>{{ order.shipping_phone|default:order.user.phone|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td style="color: #555; padding: 3px 0">Paiement</td>
+      <td>
+        {% if order.payment %} {{ order.payment.get_method_display }} {% if
+        order.payment.idinar_number %} (ID17: {{ order.payment.idinar_number
+        }}){% endif %} {% else %} Paiement à la livraison {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td style="color: #555; padding: 3px 0">Total</td>
+      <td style="font-weight: bold; color: #c0392b; font-size: 15px">
+        {{ order.total_amount|floatformat:2 }} DT
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Articles -->
+<h3
+  style="
+    color: #232f3e;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  "
+>
+  Articles commandés
+</h3>
+<table
+  style="
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 20px;
+  "
+>
+  <thead>
+    <tr style="background: #232f3e; color: #fff">
+      <th style="padding: 8px; text-align: left">Produit</th>
+      <th style="padding: 8px; text-align: center">Qté</th>
+      <th style="padding: 8px; text-align: right">P.U.</th>
+      <th style="padding: 8px; text-align: right">Sous-total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr style="border-bottom: 1px solid #eee">
+      <td style="padding: 8px; color: #232f3e">{{ item.product_name }}</td>
+      <td style="padding: 8px; text-align: center">{{ item.quantity }}</td>
+      <td style="padding: 8px; text-align: right">
+        {{ item.unit_price|floatformat:2 }} DT
+      </td>
+      <td style="padding: 8px; text-align: right">
+        {{ item.get_subtotal|floatformat:2 }} DT
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot style="background: #f8f9fa">
+    <tr>
+      <td colspan="3" style="padding: 8px; text-align: right; color: #555">
+        Sous-total
+      </td>
+      <td style="padding: 8px; text-align: right">
+        {{ order.subtotal|floatformat:2 }} DT
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3" style="padding: 8px; text-align: right; color: #555">
+        Livraison
+      </td>
+      <td style="padding: 8px; text-align: right">
+        {% if order.shipping_cost == 0 %}Gratuite{% else %}{{
+        order.shipping_cost|floatformat:2 }} DT{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3" style="padding: 8px; text-align: right; color: #555">
+        TVA / Timbre
+      </td>
+      <td style="padding: 8px; text-align: right">
+        {{ order.tva_timbre|floatformat:2 }} DT
+      </td>
+    </tr>
+    <tr style="font-weight: bold; font-size: 15px">
+      <td colspan="3" style="padding: 8px; text-align: right">Total</td>
+      <td style="padding: 8px; text-align: right; color: #c0392b">
+        {{ order.total_amount|floatformat:2 }} DT
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<!-- Adresse livraison -->
+<div
+  style="
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  "
+>
+  <p style="margin: 0 0 6px; font-weight: bold; color: #232f3e">
+    Adresse de livraison
+  </p>
+  <p style="margin: 2px 0; color: #333">
+    {{ order.shipping_full_name|default:"—" }}
+  </p>
+  <p style="margin: 2px 0; color: #555">
+    {{ order.shipping_address_line|default:"—" }}
+  </p>
+  <p style="margin: 2px 0; color: #555">
+    {{ order.shipping_postal_code|default:"" }} {{
+    order.shipping_city|default:"—" }}, {{
+    order.shipping_country|default:"Tunisie" }}
+  </p>
+  {% if order.shipping_phone %}
+  <p style="margin: 4px 0 0; color: #555">{{ order.shipping_phone }}</p>
+  {% endif %}
+</div>
+
+{% if order.notes %}
+<div
+  style="
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #5d4037;
+  "
+>
+  <strong>Notes client :</strong> "{{ order.notes }}"
+</div>
+{% endif %}
+
+<!-- CTA admin -->
+<div style="text-align: center; margin-top: 24px">
+  <a
+    href="{{ base_url }}dashboards"
+    style="
+      background: #232f3e;
+      color: #ff9900;
+      padding: 12px 28px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      display: inline-block;
+    "
+  >
+    Gérer dans le dashboard
+  </a>
+</div>
+{% endblock %}

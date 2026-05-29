@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Bienvenue sur SmartShop !{% endblock %}
+{% block content %}
+<div style="text-align: center; margin-bottom: 32px">
+  <h1 style="color: #232f3e; font-size: 24px">
+    Bienvenue sur <span style="color: #ff9900">Smart</span>Shop<sub
+      style="color: #ff9900; font-weight: 900; font-size: 14px"
+      >ML</sub
+    >
+    !
+  </h1>
+  <p style="font-size: 15px; color: #555; margin-top: 8px">
+    Bonjour <strong>{{ user.first_name }}</strong>, votre compte a été créé avec
+    succès.
+  </p>
+</div>
+
+<div
+  style="
+    background: #fff8f0;
+    border-left: 4px solid #ff9900;
+    padding: 16px;
+    border-radius: 4px;
+    margin-bottom: 24px;
+  "
+>
+  <p style="margin: 0; font-size: 14px; color: #333">
+    <strong>SmartShop ML</strong> vous propose une expérience personnalisée
+    grâce à l'intelligence artificielle : recommandations sur-mesure, offres
+    adaptées à vos habitudes, et bien plus.
+  </p>
+</div>
+
+<h3 style="color: #232f3e; font-size: 15px">
+  Ce que vous pouvez faire dès maintenant :
+</h3>
+<ul style="font-size: 14px; color: #555; line-height: 2">
+  <li>Parcourir notre catalogue de produits</li>
+  <li>Laisser des avis sur vos achats</li>
+  <li>Suivre vos commandes en temps réel</li>
+  <li>Recevoir des recommandations personnalisées</li>
+</ul>
+
+<div style="text-align: center; margin-top: 32px">
+  <a
+    href="{{ base_url }}"
+    style="
+      background: #ff9900;
+      color: #fff;
+      padding: 14px 36px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 15px;
+    "
+  >
+    Commencer mes achats
+  </a>
+</div>
+
+<p style="font-size: 12px; color: #999; text-align: center; margin-top: 24px">
+  Vous recevez cet email car vous venez de créer un compte sur SmartShop.<br />
+  Si ce n'est pas vous, ignorez cet email.
+</p>
+{% endblock %}

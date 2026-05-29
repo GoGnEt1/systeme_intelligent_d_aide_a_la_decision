@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+node_modules/
+.git/
+.venv/
+venv/
+media/
+staticfiles/
+virtual/
+seeder/
+shared/
+*.csv
+*.media*.zip

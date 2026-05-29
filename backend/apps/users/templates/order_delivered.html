@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Commande {{ order.order_number }} — Livrée !{% endblock %}
+{% block content %}
+<div style="text-align: center; margin-bottom: 28px">
+  <!-- <div style="font-size:48px; margin-bottom:10px;">🎉</div> -->
+  <h1 style="color: #232f3e; font-size: 22px; margin: 0">Commande livrée !</h1>
+  <p style="color: #555; margin-top: 10px; font-size: 15px">
+    Bonjour <strong>{{ user.first_name }}</strong>,<br />
+    Votre commande a été livrée avec succès. Nous espérons que vous êtes
+    pleinement satisfait(e) !
+  </p>
+</div>
+
+<div
+  style="
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border-left: 4px solid #16a34a;
+  "
+>
+  <table style="width: 100%; font-size: 13px">
+    <tr>
+      <td style="color: #555; padding: 3px 0">N° commande</td>
+      <td style="font-weight: bold; text-align: right">
+        {{ order.order_number }}
+      </td>
+    </tr>
+    <tr>
+      <td style="color: #555; padding: 3px 0">Statut</td>
+      <td style="font-weight: bold; text-align: right; color: #16a34a">
+        {{ order.get_status_display }}
+      </td>
+    </tr>
+    <tr>
+      <td style="color: #555; padding: 3px 0">Total</td>
+      <td style="font-weight: bold; text-align: right; color: #c0392b">
+        {{ order.total_amount|floatformat:2 }} DT
+      </td>
+    </tr>
+    {% if order.delivered_at %}
+    <tr>
+      <td style="color: #555; padding: 3px 0">Livré le</td>
+      <td style="text-align: right">
+        {{ order.delivered_at|date:"d/m/Y à H:i" }}
+      </td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+
+{% if order.shipping_full_name or order.shipping_address_line %}
+<div
+  style="
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #856404;
+  "
+>
+  <strong>Livré à :</strong><br />
+  {{ order.shipping_full_name|default:"" }}{% if order.shipping_address_line %},
+  {{ order.shipping_address_line }}{% endif %} {% if order.shipping_postal_code %}, {{ order.shipping_postal_code }}{% endif %} {{ order.shipping_city|default:"" }} {% if order.shipping_phone %} — Tél : {{ order.shipping_phone }}{% endif %}
+</div>
+{% endif %}
+
+<div style="text-align: center; margin-top: 24px">
+  <a
+    href="{{ base_url }}orders"
+    style="
+      background: #ff9900;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      display: inline-block;
+    "
+  >
+    Voir ma commande
+  </a>
+</div>
+
+{% if order.items.first.product.slug %}
+<div style="text-align: center; margin-top: 14px">
+  <a
+    href="{{ base_url }}products/{{ order.items.first.product.slug }}"
+    style="color: #ff9900; font-size: 13px; text-decoration: none"
+  >
+    ⭐ Laisser un avis sur votre achat
+  </a>
+</div>
+{% endif %} {% endblock %}

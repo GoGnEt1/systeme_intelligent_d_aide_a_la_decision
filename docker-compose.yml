@@ -1,0 +1,164 @@
+# =============================================================
+#  SmartShop — Docker Compose (VERSION CORRIGÉE)
+#  - Suppression du champ "version" (déprécié dans Compose v2)
+#  - PostgreSQL 17
+#  - healthcheck django ajouté
+# =============================================================
+
+services:
+  # ─────────────────────────────────────────
+  #  1. BASE DE DONNÉES — PostgreSQL 17
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    container_name: smartshop_postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartshop_db}
+      POSTGRES_USER: ${POSTGRES_USER:-smartshop_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartshop_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - smartshop_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-smartshop_user} -d ${POSTGRES_DB:-smartshop_db}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  #  2. BACKEND PRINCIPAL — Django + DRF
+  #  gunicorn smartshop.wsgi:application --bind 0.0.0.0:8000 --workers 3 --reload"
+  # ─────────────────────────────────────────
+  django:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartshop_django
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn smartshop.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120 --worker-class sync --max-requests 1000 --max-requests-jitter 100"
+    env_file:
+      - .env
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - ML_SERVICE_URL=http://fastapi:8001
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+    volumes:
+      - ./backend:/app
+      - ./shared/ml_data:/shared/ml_data
+      # - static_files:/app/staticfiles
+      - ./backend/staticfiles:/app/staticfiles
+      - ./backend/media:/app/media
+      # - media_files:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smartshop_net
+
+  # ─────────────────────────────────────────
+  #  3. MICROSERVICE ML — FastAPI
+  # ─────────────────────────────────────────
+  fastapi:
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile
+    container_name: smartshop_fastapi
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - MODELS_DIR=/app/models
+    volumes:
+      - ./ml_service:/app
+      - ./shared/ml_data:/shared/ml_data
+      - ml_models:/app/models
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smartshop_net
+
+  # ─────────────────────────────────────────
+  #  4. FRONTEND — React + Vite
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: smartshop_frontend
+    restart: unless-stopped
+    command: npm run dev -- --host 0.0.0.0
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+      - VITE_ML_URL=http://localhost:8001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - smartshop_net
+
+  # ─────────────────────────────────────────
+  #  5. REVERSE PROXY — Nginx
+  # ─────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: smartshop_nginx
+    restart: unless-stopped
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # - static_files:/static:ro
+      - ./backend/staticfiles:/static:ro
+      - ./backend/media:/media:ro
+      # - media_files:/media:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+      - fastapi
+      - frontend
+    networks:
+      - smartshop_net
+
+volumes:
+  postgres_data:
+  # static_files:
+  # media_files:
+  ml_models:
+
+networks:
+  smartshop_net:
+    driver: bridge

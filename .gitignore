@@ -1,0 +1,71 @@
+# =============================================================
+#  SmartShop — .gitignore
+# =============================================================
+
+# ── Python / Django ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+
+# ── Environnements virtuels ──────────────────────────────────
+venv/
+env/
+.venv/
+ENV/
+virtual/
+
+# ── Variables d'environnement (TRÈS IMPORTANT) ───────────────
+.env
+.env.local
+.env.*.local
+
+# ── Django ───────────────────────────────────────────────────
+*.log
+local_settings.py
+db.sqlite3
+staticfiles/
+media/
+medias/
+
+# ── Node.js / React ──────────────────────────────────────────
+node_modules/
+dist/
+.DS_Store
+*.local
+.eslintcache
+
+# ── Docker ───────────────────────────────────────────────────
+# (ne pas ignorer docker-compose.yml !)
+docker-compose.override.yml
+
+# ── Modèles ML ───────────────────────────────────────────────
+ml_service/models/*.pkl
+ml_service/models/*.joblib
+ml_service/models/*.json
+ml_service/models/*.csv
+ml_service/data/*.csv
+ml_service/models/*.keras
+ml_service/models/*.parquet
+
+# ── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Jupyter ──────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# —— Dossier partarger —————————————————————
+shared/
+plantUml/

@@ -1,0 +1,53 @@
+# =============================================================
+#  SmartShop ML Service — Dépendances Python
+#  Compatible Python 3.11.9
+#  Audit complet Sprint S3 — toutes les dépendances explicites
+# =============================================================
+
+# ── API Framework ────────────────────────────────────────────
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.7
+
+# ── Base de données ──────────────────────────────────────────
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# ── Machine Learning — Core ──────────────────────────────────
+# numpy EN PREMIER — scikit-surprise et prophet en ont besoin au build
+numpy==1.26.4
+scikit-learn==1.4.2
+pandas==2.2.1
+scipy==1.13.0
+joblib==1.3.2
+
+# ── Parquet — REQUIS pour pd.read_parquet(products.parquet) ──
+# Manquant → models_loaded=false même si le fichier est présent
+pyarrow==14.0.2
+
+# ── Machine Learning — Recommandation collaborative ──────────
+scikit-surprise==1.1.4
+
+# ── TensorFlow / Keras — NCF NeuMF ──────────────────────────
+# REQUIS pour charger ncf_model.keras
+# tensorflow-cpu : pas besoin de GPU en inférence, image ~500 MB plus légère
+tensorflow-cpu==2.20.0
+
+# ── Machine Learning — Prévision temporelle (Sprint S4) ──────
+cmdstanpy==1.2.2
+prophet==1.1.5
+statsmodels==0.14.2
+
+# ── Utilitaires ──────────────────────────────────────────────
+pydantic==2.6.1
+python-dotenv==1.0.1
+httpx==0.27.0
+
+# ── Visualisation (notebooks Jupyter uniquement) ─────────────
+# Ces packages ne sont PAS nécessaires au runtime FastAPI
+matplotlib==3.8.3
+seaborn==0.13.2
+plotly==5.19.0
+jupyter==1.0.0
+ipykernel==6.29.2

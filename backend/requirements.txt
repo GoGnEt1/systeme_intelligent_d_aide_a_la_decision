@@ -1,0 +1,40 @@
+# =============================================================
+#  SmartShop Backend — Dépendances Python
+# =============================================================
+
+# ── Framework Web ───────────────────────────────────────────
+Django==4.2.9
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+# django-debug-toolbar==6.3.0
+# ── Variables d'environnement ────────────────────────────────
+python-decouple==3.7
+# python-dotenv==1.2.1
+
+# ── Authentification JWT ────────────────────────────────────
+djangorestframework-simplejwt==5.3.1
+
+# ── Base de données ─────────────────────────────────────────
+psycopg2-binary==2.9.9
+django-environ==0.11.2
+
+# ── Serveur de production ───────────────────────────────────
+gunicorn==21.2.0
+
+# ── Utilitaires ─────────────────────────────────────────────
+Pillow==10.2.0           # gestion des images produits
+django-filter==23.5      # filtrage avancé dans les API
+drf-spectacular==0.27.1  # documentation Swagger/OpenAPI automatique
+
+# ── Communication avec le microservice ML ───────────────────
+requests==2.31.0
+httpx==0.26.0            # async HTTP client
+
+# ── Dev tools ───────────────────────────────────────────────
+django-extensions==3.2.3
+ipython==8.20.0
+faker==40.18.0 
+tqdm==4.67.3
+
+# numpy==2.4.6
+pandas==3.0.3
