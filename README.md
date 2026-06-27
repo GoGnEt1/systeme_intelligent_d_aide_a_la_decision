@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white" />
-<img src="https://img.shields.io/badge/Django-4.2-092E20?style=flat&logo=django&logoColor=white" />
-<img src="https://img.shields.io/badge/FastAPI-0.109-009688?style=flat&logo=fastapi&logoColor=white" />
-<img src="https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black" />
-<img src="https://img.shields.io/badge/PostgreSQL-17-4169E1?style=flat&logo=postgresql&logoColor=white" />
-<img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white" />
-<img src="https://img.shields.io/badge/License-MIT-green?style=flat" />
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://docs.python.org/3/)
+[![DRF](https://img.shields.io/badge/Django-4.2-092E20?style=flat&logo=django&logoColor=white)](https://www.django-rest-framework.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![posgres](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/17/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)](https://docs.docker.com/)
+[![MIT](https://img.shields.io/badge/License-MIT-green?style=flat)](https://github.com/GoGnEt1/systeme_intelligent_d_aide_a_la_decision?tab=MIT-1-ov-file)
 
 <br/><br/>
 
