@@ -68,7 +68,7 @@ export default function RecommendationSection({
           {" "}
           {isAuth && user?.first_name
             ? `Recommandé pour vous, ${user.first_name}`
-            : "Recommandé pour vous"}
+            : "Vous aimerez aussi"}
           {meta && !isLoading && <SrcBadge src={meta.data_source} />}
         </h2>
         <div className="flex items-center gap-3">

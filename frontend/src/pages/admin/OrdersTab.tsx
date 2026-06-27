@@ -1,5 +1,5 @@
 // src/pages/admin/OrdersTab.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../services/api";
 import Spinner from "../../components/common/Spinner";
 import toast from "react-hot-toast";
@@ -467,13 +467,16 @@ export default function OrdersTab() {
 
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
 
+  // ── Nouveaux états : recherche + pagination + compteurs globaux ──
   const [searchOrder, setSearchOrder] = useState("");
   const [statusFilter2, setStatusFilter2] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const PAGE_SIZE = 20;
 
+  // ── loadOrders : récupère les commandes + status_counts globaux ──
   const loadOrders = useCallback((pg = 1, q = "", st = "") => {
     setLoading(true);
     const params = new URLSearchParams({
@@ -488,25 +491,62 @@ export default function OrdersTab() {
       .get(`/orders/?${params}`)
       .then((r) => {
         const d = r.data;
+        console.log("Orders: ", d);
+
         setOrders(d.results ?? d);
         setTotalCount(d.count ?? (d.results ?? d).length);
         setTotalPages(
           Math.ceil((d.count ?? (d.results ?? d).length) / PAGE_SIZE) || 1,
         );
+        // ← status_counts renvoyé par le backend : compteurs GLOBAUX
+        if (d.status_counts) {
+          setStatusCounts(d.status_counts);
+        }
       })
       .catch(() => toast.error("Erreur lors du chargement des commandes."))
       .finally(() => setLoading(false));
   }, []);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setPage(newPage);
+    loadOrders(newPage, searchOrder, statusFilter2);
+  };
+
+  // Debounce sur la recherche texte
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setPage(1);
+      loadOrders(1, searchOrder, statusFilter2);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [searchOrder, statusFilter2, loadOrders]);
 
   useEffect(() => {
     loadOrders(1);
   }, [loadOrders]);
 
   // Mise à jour locale d'un order (évite un re-fetch complet)
+  // Si le statut a changé, on recalcule aussi statusCounts optimistement
   const patchLocalOrder = (patch: Partial<Order> & { id: number }) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === patch.id ? { ...o, ...patch } : o)),
-    );
+    setOrders((prev) => {
+      const updated = prev.map((o) =>
+        o.id === patch.id ? { ...o, ...patch } : o,
+      );
+
+      // Si le statut a changé, mettre à jour les compteurs globaux
+      if (patch.status) {
+        const oldOrder = prev.find((o) => o.id === patch.id);
+        if (oldOrder && oldOrder.status !== patch.status) {
+          setStatusCounts((counts) => ({
+            ...counts,
+            [oldOrder.status]: Math.max(0, (counts[oldOrder.status] ?? 0) - 1),
+            [patch.status!]: (counts[patch.status!] ?? 0) + 1,
+          }));
+        }
+      }
+      return updated;
+    });
   };
 
   const updateStatus = async (order: Order, newStatus: string) => {
@@ -551,20 +591,22 @@ export default function OrdersTab() {
     }
   };
 
+  // Filtre local sur la page courante (pour le highlight visuel uniquement)
+  // Le vrai filtre se fait côté API via statusFilter2
   const filtered =
     filterStatus === "ALL"
       ? orders
       : orders.filter((o) => o.status === filterStatus);
 
+  // ← Compteurs globaux issus de status_counts (pas juste la page courante)
   const stats = Object.entries(STATUS_LABELS)
     .map(([key, label]) => ({
       key,
       label,
-      count: orders.filter((o) => o.status === key).length,
+      count: statusCounts[key] ?? 0,
     }))
     .filter((s) => s.count > 0);
 
-  console.log(stats);
   return (
     <div
       className="space-y-4 admin-tab-root"
@@ -632,7 +674,7 @@ export default function OrdersTab() {
         </p>
       </div>
 
-      {/* ── Barre de recherche ── */}
+      {/* ── Barre de recherche ───────────────────────────── */}
       <div className="flex flex-wrap gap-3 items-center mb-1">
         <div className="relative flex-1 min-w-[220px]">
           <input
@@ -642,8 +684,8 @@ export default function OrdersTab() {
             onChange={(e) => {
               setSearchOrder(e.target.value);
               setPage(1);
-              loadOrders(1, e.target.value, statusFilter2);
             }}
+            onClick={(e) => e.stopPropagation()}
             style={{
               background: T.inputBg,
               color: T.text,
@@ -660,14 +702,16 @@ export default function OrdersTab() {
         </span>
       </div>
 
-      {/* ── Barre de filtres ─────────────────────────────── */}
+      {/* ── Barre de filtres par statut ──────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* Bouton "Toutes" — affiche le total global */}
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setStatusFilter2("");
+            setFilterStatus("ALL");
             setPage(1);
             loadOrders(1, searchOrder, "");
-            setFilterStatus("ALL");
           }}
           style={{
             fontSize: 12,
@@ -680,16 +724,19 @@ export default function OrdersTab() {
             cursor: "pointer",
           }}
         >
-          Toutes ({orders.length})
+          Toutes ({totalCount})
         </button>
+
+        {/* Un bouton par statut avec compteur global ← status_counts */}
         {stats.map((s) => (
           <button
             key={s.key}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setStatusFilter2(s.key);
+              setFilterStatus(s.key);
               setPage(1);
               loadOrders(1, searchOrder, s.key);
-              setFilterStatus(s.key);
             }}
             style={{
               fontSize: 12,
@@ -705,12 +752,12 @@ export default function OrdersTab() {
             {s.label} ({s.count})
           </button>
         ))}
+
+        {/* Bouton actualiser */}
         <button
-          onClick={() => {
-            setStatusFilter2("");
-            setPage(1);
-            loadOrders(1, searchOrder, "");
-            setFilterStatus("ALL");
+          onClick={(e) => {
+            e.stopPropagation();
+            loadOrders(page, searchOrder, statusFilter2);
           }}
           style={{
             marginLeft: "auto",
@@ -810,7 +857,7 @@ export default function OrdersTab() {
                       STATUS_COLORS[o.status] ?? STATUS_COLORS.PENDING;
 
                     return (
-                      <React.Fragment key={o.id}>
+                      <>
                         {/* ── Ligne principale ── */}
                         <tr
                           key={o.id}
@@ -1308,7 +1355,7 @@ export default function OrdersTab() {
                             </td>
                           </tr>
                         )}
-                      </React.Fragment>
+                      </>
                     );
                   })
                 )}
@@ -1316,48 +1363,152 @@ export default function OrdersTab() {
             </table>
           </div>
 
-          {/* Footer + Pagination */}
+          {/* ── Footer : résumé + alertes + pagination ── */}
           <div className="px-4 py-2.5 border-t bg-gray-50 text-[12px] text-gray-400 flex items-center justify-between flex-wrap gap-2">
+            {/* Résumé gauche */}
             <span>
               {totalCount} commande{totalCount !== 1 ? "s" : ""}
               {statusFilter2
                 ? ` · statut "${STATUS_LABELS[statusFilter2]}"`
                 : ""}
             </span>
-            <div className="flex items-center gap-3">
+
+            {/* Droite : abandon + pagination */}
+            <div className="flex items-center gap-4">
               {orders.filter((o) => o.no_more_delivery).length > 0 && (
                 <span className="text-red-500 font-medium flex items-center gap-1">
                   <FiAlertTriangle size={11} />
                   {orders.filter((o) => o.no_more_delivery).length} en abandon
                 </span>
               )}
+
+              {/* Pagination inline */}
               {totalPages > 1 && (
-                <div className="flex gap-1">
+                <div className="flex items-center gap-1">
+                  {/* Première page */}
                   <button
                     disabled={page <= 1}
-                    onClick={() => {
-                      const p = page - 1;
-                      setPage(p);
-                      loadOrders(p, searchOrder, statusFilter2);
+                    onClick={() => handlePageChange(1)}
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${T.border}`,
+                      background: T.card,
+                      color: page <= 1 ? T.muted : T.text,
+                      cursor: page <= 1 ? "not-allowed" : "pointer",
+                      fontSize: 11,
+                      opacity: page <= 1 ? 0.4 : 1,
                     }}
-                    className="px-2 py-0.5 rounded border text-[12px] disabled:opacity-30 bg-white"
+                    title="Première page"
                   >
-                    ← Préc.
+                    «
                   </button>
-                  <span className="px-2 py-0.5 text-[12px]">
-                    {page}/{totalPages}
-                  </span>
+
+                  {/* Page précédente */}
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => handlePageChange(page - 1)}
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${T.border}`,
+                      background: T.card,
+                      color: page <= 1 ? T.muted : T.text,
+                      cursor: page <= 1 ? "not-allowed" : "pointer",
+                      fontSize: 11,
+                      opacity: page <= 1 ? 0.4 : 1,
+                    }}
+                  >
+                    ‹
+                  </button>
+
+                  {/* Pages numérotées (fenêtre glissante ±2) */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (p) =>
+                        p === 1 || p === totalPages || Math.abs(p - page) <= 2,
+                    )
+                    .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+                        acc.push("…");
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, i) =>
+                      p === "…" ? (
+                        <span
+                          key={`ellipsis-${i}`}
+                          style={{
+                            padding: "0 4px",
+                            color: T.muted,
+                            fontSize: 11,
+                          }}
+                        >
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => handlePageChange(p as number)}
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            border: `1px solid ${
+                              page === p ? T.accent : T.border
+                            }`,
+                            background: page === p ? T.accent : T.card,
+                            color: page === p ? "white" : T.text,
+                            cursor: "pointer",
+                            fontSize: 11,
+                            fontWeight: page === p ? 700 : 400,
+                            minWidth: 28,
+                          }}
+                        >
+                          {p}
+                        </button>
+                      ),
+                    )}
+
+                  {/* Page suivante */}
                   <button
                     disabled={page >= totalPages}
-                    onClick={() => {
-                      const p = page + 1;
-                      setPage(p);
-                      loadOrders(p, searchOrder, statusFilter2);
+                    onClick={() => handlePageChange(page + 1)}
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${T.border}`,
+                      background: T.card,
+                      color: page >= totalPages ? T.muted : T.text,
+                      cursor: page >= totalPages ? "not-allowed" : "pointer",
+                      fontSize: 11,
+                      opacity: page >= totalPages ? 0.4 : 1,
                     }}
-                    className="px-2 py-0.5 rounded border text-[12px] disabled:opacity-30 bg-white"
                   >
-                    Suiv. →
+                    ›
                   </button>
+
+                  {/* Dernière page */}
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => handlePageChange(totalPages)}
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${T.border}`,
+                      background: T.card,
+                      color: page >= totalPages ? T.muted : T.text,
+                      cursor: page >= totalPages ? "not-allowed" : "pointer",
+                      fontSize: 11,
+                      opacity: page >= totalPages ? 0.4 : 1,
+                    }}
+                    title="Dernière page"
+                  >
+                    »
+                  </button>
+
+                  <span style={{ color: T.muted, fontSize: 11, marginLeft: 4 }}>
+                    Page {page}/{totalPages}
+                  </span>
                 </div>
               )}
             </div>

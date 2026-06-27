@@ -48,9 +48,29 @@ services:
     restart: unless-stopped
     command: >
       sh -c "python manage.py wait_for_db &&
-             python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn smartshop.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120 --worker-class sync --max-requests 1000 --max-requests-jitter 100"
+            python manage.py migrate &&
+            python manage.py collectstatic --noinput &&
+            gunicorn smartshop.wsgi:application --bind 0.0.0.0:8000 --workers 2 --worker-class gthread --threads 4 --timeout 300 --max-requests 500 --max-requests-jitter 50 --log-level info"
+
+    # command: >
+    #   sh -c "python manage.py wait_for_db &&
+    #         python manage.py migrate &&
+    #         python manage.py collectstatic --noinput &&
+    #         gunicorn smartshop.wsgi:application
+    #           --bind 0.0.0.0:8000
+    #           --workers 2
+    #           --worker-class gthread
+    #           --threads 4
+    #           --timeout 300
+    #           --keepalive 5
+    #           --max-requests 500
+    #           --max-requests-jitter 50
+    #           --log-level info"
+    # command: >
+    #   sh -c "python manage.py wait_for_db &&
+    #          python manage.py migrate &&
+    #          python manage.py collectstatic --noinput &&
+    #          gunicorn smartshop.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120 --worker-class sync --max-requests 1000 --max-requests-jitter 100"
     env_file:
       - .env
     environment:
@@ -117,6 +137,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: development
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     container_name: smartshop_frontend
     restart: unless-stopped
     command: npm run dev -- --host 0.0.0.0

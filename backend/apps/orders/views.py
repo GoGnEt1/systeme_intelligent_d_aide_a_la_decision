@@ -7,17 +7,17 @@
    - OrderListCreateView : admin voit tous les statuts
 =============================================================
 """
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.db.models import Count, Q
 import logging
 import traceback
 logger = logging.getLogger(__name__)
 from django.core.exceptions import ValidationError
-from rest_framework import filters
 
 # from .models import Cart, CartItem, Order, OrderItem
 from .models import Cart, CartItem, Order, OrderItem, OrderStatusHistory, SHIPPING_COST, SHIPPING_THRESHOLD, TVA_TIMBRE
@@ -48,7 +48,7 @@ def send_admin_notification(order, template: str, subject: str, request=None):
     admin_email = settings.EMAIL_HOST_USER
     if not admin_email:
         return
-    base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173/')
+    base_url = getattr(settings, 'DJANGO_API_URL', 'http://localhost:5173/')
     
     # select_related pour éviter N+1 et surtout DoesNotExist sur payment
     from apps.orders.models import Order as _Order
@@ -84,7 +84,8 @@ def send_order_email(order: Order, template: str, subject: str, request=None):
     if not to_mail or '@' not in str(to_mail):
         return  # pas d'email → pas d'envoi
 
-    base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173/')
+    # base_url = request.build_absolute_uri('/') if request else ''
+    base_url = getattr(settings, 'DJANGO_API_URL', 'http://localhost:5173/')
 
     send_html_email(
         subject=subject,
@@ -211,35 +212,92 @@ class OrderListCreateView(generics.ListCreateAPIView):
     """
     GET  /api/orders/    → Mes commandes (ou toutes si admin + search + pagination)
     POST /api/orders/    → Créer une commande depuis le panier
+
+    Réponse GET (admin) :
+    {
+      "count": 250,
+      "next": "...",
+      "previous": "...",
+      "status_counts": {
+        "PENDING": 18, "CONFIRMED": 25, "PROCESSING": 11,
+        "SHIPPED": 9, "DELIVERED": 170, "CANCELLED": 12, "REFUNDED": 5
+      },
+      "results": [...]
+    }
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class   = OrderSerializer
     filter_backends    = [filters.SearchFilter, filters.OrderingFilter]
-    # Admin: recherche par référence, email client, téléphone, ville
-    search_fields      = ['id', 'user__email', 'user__first_name', 'user__last_name',
-                          'user__phone', 'shipping_city', 'shipping_full_name']
+    search_fields      = [
+        'order_number', 'user__email', 'user__first_name',
+        'user__last_name', 'user__phone',
+        'shipping_city', 'shipping_full_name', 'shipping_phone',
+    ]
     ordering_fields    = ['created_at', 'total_amount', 'status']
     ordering           = ['-created_at']
 
+    # ── Queryset de base ──────────────────────────────────────
     def get_queryset(self):
         qs = Order.objects.prefetch_related(
             'items__product__images', 'status_history__changed_by'
-        ).select_related('user')
+        ).select_related('user', 'payment')
 
         if getattr(self.request.user, 'is_admin', False):
-            # Admin : toutes les commandes avec filtre optionnel par status
-            status_filter = self.request.query_params.get('status')
+            status_filter = self.request.query_params.get('status', '').strip()
             if status_filter:
                 qs = qs.filter(status=status_filter)
-            return qs.all()
+            return qs.order_by('-created_at')
 
-        return qs.filter(user=self.request.user)
-    
+        return qs.filter(user=self.request.user).order_by('-created_at')
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
-    
+
+    # ── GET : injecte status_counts dans la réponse paginée ───
+    def list(self, request, *args, **kwargs):
+        # On récupère le queryset SANS filtre de statut pour les compteurs
+        # (l'admin veut les totaux globaux, pas seulement la page courante)
+        response = super().list(request, *args, **kwargs)
+
+        if getattr(request.user, 'is_admin', False):
+            # Queryset de base sans filtre statut ni recherche = compteurs globaux
+            base_qs = Order.objects.all()
+
+            # Appliquer la même recherche texte si présente (cohérence métier)
+            # mais PAS le filtre de statut → on veut les totaux de tous les statuts
+            search_q = request.query_params.get('search', '').strip()
+            if search_q:
+                base_qs = base_qs.filter(
+                    Q(order_number__icontains=search_q)
+                    | Q(user__email__icontains=search_q)
+                    | Q(user__first_name__icontains=search_q)
+                    | Q(user__last_name__icontains=search_q)
+                    | Q(user__phone__icontains=search_q)
+                    | Q(shipping_full_name__icontains=search_q)
+                    | Q(shipping_phone__icontains=search_q)
+                    | Q(shipping_city__icontains=search_q)
+                )
+
+            # Une seule requête agrégée → pas de N+1
+            counts_qs = (
+                base_qs
+                .values('status')
+                .annotate(total=Count('id'))
+            )
+            status_counts = {row['status']: row['total'] for row in counts_qs}
+
+            # S'assurer que tous les statuts connus sont présents (valeur 0 si absent)
+            all_statuses = [s[0] for s in Order.Status.choices]
+            for s in all_statuses:
+                status_counts.setdefault(s, 0)
+
+            response.data['status_counts'] = status_counts
+
+        return response
+
+    # ── POST : créer une commande depuis le panier ────────────
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = CreateOrderSerializer(data=request.data)
@@ -379,10 +437,22 @@ class OrderListCreateView(generics.ListCreateAPIView):
                         order.order_number, e, traceback.format_exc())
 
 
+        """
+        try:
+            # Email confirmation client
+            send_order_email(
+                order, 'order_confirmed.html',
+                f'Commande {order.order_number} confirmée — SmartShop',
+                request
+            )
+        except Exception:
+            pass  # ne pas bloquer si email échoue
+        """
         return Response(
             OrderSerializer(order, context={'request': request}).data,
             status=status.HTTP_201_CREATED
         )
+        # return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
     # mes commandes
     @action(methods=['GET'], detail=False, permission_classes=[permissions.IsAuthenticated], url_path='my-orders')
@@ -443,6 +513,10 @@ class OrderStatusUpdateView(APIView):
         try:
             order.transition_status(new_status, changed_by=request.user, note=note)
 
+            # if note:
+            #     order.transition_status(new_status, changed_by=request.user, note=note)
+            # else:
+            #     order.transition_status(new_status, changed_by=request.user)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -464,6 +538,9 @@ class OrderStatusUpdateView(APIView):
 
         order.refresh_from_db()
         return Response(OrderSerializer(order, context={'request': request}).data)
+
+        # return Response(OrderSerializer(order).data)
+
 
 class OrderCancelView(APIView):
     """
@@ -616,6 +693,8 @@ class OrderDeliveryDateView(APIView):
     PATCH /api/orders/<pk>/delivery-date/
     Admin — met à jour la date de livraison prévue sans enregistrer d'absence.
     Utilisé pour la planification initiale.
+
+    Body : { "delivery_date": "2026-04-05" }
     """
     permission_classes = [permissions.IsAuthenticated]
 

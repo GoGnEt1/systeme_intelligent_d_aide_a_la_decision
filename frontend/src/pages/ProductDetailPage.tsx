@@ -187,7 +187,7 @@ export default function ProductDetailPage() {
                 <span className="font-medium">{product.category_name}</span>
               </p>
             </div>
-            {categorySlug && (
+            {categorySlug && similar.length > 5 && (
               <Link
                 to={`/products?category=${categorySlug}`}
                 className="text-[13px] text-blue-600 hover:underline font-medium flex items-center gap-1"

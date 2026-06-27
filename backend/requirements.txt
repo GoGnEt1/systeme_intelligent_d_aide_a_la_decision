@@ -20,6 +20,7 @@ django-environ==0.11.2
 
 # ── Serveur de production ───────────────────────────────────
 gunicorn==21.2.0
+# gunicorn[gthread]>=21.2.0
 
 # ── Utilitaires ─────────────────────────────────────────────
 Pillow==10.2.0           # gestion des images produits

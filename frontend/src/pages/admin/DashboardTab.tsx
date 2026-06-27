@@ -52,6 +52,7 @@ import {
   selectDataSource,
 } from "../../store/slices/forecastSlice";
 import { useAdminTheme } from "./AdminDashboards";
+import type { AdminTheme } from "./AdminDashboards";
 
 // ── Palette partagée ─────────────────────────────────────────────────────────
 const C = {
@@ -82,14 +83,18 @@ interface KPIProps {
   icon: React.ReactNode;
   color?: string;
   onClick?: () => void;
+  theme: AdminTheme;
 }
 const KPI = memo(
-  ({ label, value, sub, icon, color = C.accent, onClick }: KPIProps) => (
+  // ({ label, value, sub, icon, color = C.accent, onClick, theme }: KPIProps) => (
+  ({ label, value, sub, icon, color, onClick, theme }: KPIProps) => (
     <div
       onClick={onClick}
       style={{
-        background: C.card,
-        border: `1px solid ${C.border}`,
+        // background: C.card,
+        // border: `1px solid ${C.border}`,
+        background: theme.card,
+        border: `1px solid ${theme.border}`,
         borderRadius: 14,
         padding: "18px 20px",
         position: "relative",
@@ -127,7 +132,8 @@ const KPI = memo(
           <p
             style={{
               fontSize: 11,
-              color: C.muted,
+              // color: C.muted,
+              color: theme.muted,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.07em",
@@ -141,7 +147,8 @@ const KPI = memo(
               fontSize: 26,
               fontWeight: 800,
               lineHeight: 1,
-              color: C.text,
+              // color: C.text,
+              color: theme.text,
             }}
           >
             {value}
@@ -249,7 +256,21 @@ interface MLBilanProps {
   loading?: boolean;
   metrics: { label: string; value: string | number | null; ok?: boolean }[];
   onNavigate?: () => void;
+  // theme: AdminTheme;
 }
+// const MLBilan = memo(
+//   ({
+//     title,
+//     sprint,
+//     algo,
+//     color,
+//     loaded,
+//     loading,
+//     metrics,
+//     onNavigate,
+//     theme,
+//   }: MLBilanProps) => (
+
 const MLBilan = memo(
   ({
     title,
@@ -260,143 +281,148 @@ const MLBilan = memo(
     loading,
     metrics,
     onNavigate,
-  }: MLBilanProps) => (
-    <div
-      style={{
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 14,
-        padding: 20,
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    // theme,
+  }: MLBilanProps) => {
+    const T = useAdminTheme();
+
+    return (
       <div
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          bottom: 0,
-          width: 3,
-          background: color,
-        }}
-      />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 14,
+          background: T.card,
+          border: `1px solid ${T.border}`,
+          borderRadius: 14,
+          padding: 20,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <div>
-          <p style={{ fontSize: 15, fontWeight: 800, color: C.text }}>
-            {title}
-          </p>
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-            {algo} · <span style={{ color }}>{sprint}</span>
-          </p>
-        </div>
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            bottom: 0,
+            width: 3,
+            background: color,
+          }}
+        />
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: 4,
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 14,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              background: loading
-                ? `${C.warning}18`
-                : loaded
-                  ? `${C.success}18`
-                  : `${C.danger}18`,
-              border: `1px solid ${loading ? C.warning : loaded ? C.success : C.danger}44`,
-              borderRadius: 20,
-              padding: "3px 10px",
-              fontSize: 11,
-              fontWeight: 700,
-              color: loading ? C.warning : loaded ? C.success : C.danger,
-            }}
-          >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "currentColor",
-                display: "inline-block",
-                animation: loading ? "pulse 1.5s infinite" : "none",
-              }}
-            />
-            {loading ? "Chargement…" : loaded ? "Opérationnel" : "Hors ligne"}
+          <div>
+            <p style={{ fontSize: 15, fontWeight: 800, color: T.text }}>
+              {title}
+            </p>
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+              {algo} · <span style={{ color }}>{sprint}</span>
+            </p>
           </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {metrics.map((m) => (
           <div
-            key={m.label}
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "7px 10px",
-              background: "#ffffff06",
-              borderRadius: 8,
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: 4,
             }}
           >
-            <span style={{ fontSize: 12, color: C.muted }}>{m.label}</span>
-            <span
+            <div
               style={{
-                fontSize: 13,
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                background: loading
+                  ? `${C.warning}18`
+                  : loaded
+                    ? `${C.success}18`
+                    : `${C.danger}18`,
+                border: `1px solid ${loading ? C.warning : loaded ? C.success : C.danger}44`,
+                borderRadius: 20,
+                padding: "3px 10px",
+                fontSize: 11,
                 fontWeight: 700,
-                color:
-                  m.value === null || m.value === "N/A" || m.value === "—"
-                    ? C.muted
-                    : m.ok === true
-                      ? C.success
-                      : m.ok === false
-                        ? C.danger
-                        : color,
+                color: loading ? C.warning : loaded ? C.success : C.danger,
               }}
             >
-              {m.value ?? "—"}
-            </span>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "currentColor",
+                  display: "inline-block",
+                  animation: loading ? "pulse 1.5s infinite" : "none",
+                }}
+              />
+              {loading ? "Chargement…" : loaded ? "Opérationnel" : "Hors ligne"}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {onNavigate && (
-        <button
-          onClick={onNavigate}
-          style={{
-            marginTop: 14,
-            width: "100%",
-            padding: "8px 0",
-            borderRadius: 8,
-            border: `1px solid ${color}33`,
-            background: `${color}11`,
-            color,
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-          }}
-        >
-          Ouvrir le dashboard <FiArrowUpRight size={12} />
-        </button>
-      )}
-    </div>
-  ),
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {metrics.map((m) => (
+            <div
+              key={m.label}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "7px 10px",
+                background: "#ffffff06",
+                borderRadius: 8,
+              }}
+            >
+              <span style={{ fontSize: 12, color: C.muted }}>{m.label}</span>
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color:
+                    m.value === null || m.value === "N/A" || m.value === "—"
+                      ? C.muted
+                      : m.ok === true
+                        ? C.success
+                        : m.ok === false
+                          ? C.danger
+                          : color,
+                }}
+              >
+                {m.value ?? "—"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {onNavigate && (
+          <button
+            onClick={onNavigate}
+            style={{
+              marginTop: 14,
+              width: "100%",
+              padding: "8px 0",
+              borderRadius: 8,
+              border: `1px solid ${color}33`,
+              background: `${color}11`,
+              color,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            Ouvrir le dashboard <FiArrowUpRight size={12} />
+          </button>
+        )}
+      </div>
+    );
+  },
 );
 
 // ── Composant principal ───────────────────────────────────────────────────────
@@ -616,6 +642,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           icon={<FiPackage />}
           color={C.cyan}
           sub="en catalogue"
+          theme={C}
         />
         <KPI
           label="Commandes totales"
@@ -624,6 +651,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           color="#3B82F6"
           sub={`${siteStats.pending} en attente`}
           onClick={() => onNavigate?.("orders")}
+          theme={C}
         />
         <KPI
           label="Clients enregistrés"
@@ -631,6 +659,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           icon={<FiUsers />}
           color="#EC4899"
           sub="comptes actifs"
+          theme={C}
         />
         <KPI
           label="Catégories"
@@ -638,6 +667,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           icon={<FiTag />}
           color={C.warning}
           sub="de produits"
+          theme={C}
         />
         <KPI
           label="CA annuel"
@@ -646,6 +676,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           icon="DT"
           color={C.success}
           sub={`${selectedYear}`}
+          theme={C}
         />
       </div>
 
@@ -1020,10 +1051,11 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
               },
               {
                 label: "Source données",
-                value:
-                  fDataSource?.using_kaggle_fallback === false
-                    ? "SmartShop Live"
-                    : "Kaggle Store Sales",
+                value: "SmartShop Live",
+                // value:
+                //   fDataSource?.using_kaggle_fallback === false
+                //     ? "SmartShop Live"
+                //     : "Kaggle Store Sales",
                 ok: fDataSource?.using_kaggle_fallback === false,
               },
             ]}

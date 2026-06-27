@@ -1624,7 +1624,7 @@ export default function SegmentDashboard() {
           {/* Barres CA */}
           <Card>
             <SectionHead title="Contribution au CA par segment" />
-            <div className="flex gap-3 items-end h-28 px-2">
+            <div className="flex gap-3 items-end h-28 px-2 mt-10">
               {segments.map((sg) => (
                 <div
                   key={sg.segment}

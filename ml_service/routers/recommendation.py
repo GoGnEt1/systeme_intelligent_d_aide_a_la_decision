@@ -267,12 +267,39 @@ async def stats():
     # Utiliser les vraies métriques du notebook si disponibles
     _m = _REC_META.get("metrics", {})
     metrics_out = {
-        "svd":    _m.get("svd",    {"rmse": 0.7116, "mae": 0.4637}),
-        "ncf":    _m.get("ncf",    {"rmse": 0.7475, "mae": 0.3792}),
-        "hybrid": _m.get("hybrid", {"rmse": 0.5820}),
-        "cb":     {"precision_10": 0.781, "coverage": 0.921},
+        "svd_baseline": _m.get("svd_baseline", {"rmse": 0.7749, "mae": 0.5421}),
+        "svd":    _m.get("svd",    {
+            "rmse": 0.7116, "mae": 0.4637,
+            "best_params": {"n_factors": 100, "n_epochs": 30, "lr_all": 0.007, "reg_all": 0.06},
+        }),
+        "ncf":    _m.get("ncf",    {
+            "rmse": 0.7475, "mae": 0.3792,
+            "best_epoch": 30, "val_mae_norm": 0.0948,
+        }),
+        "hybrid": _m.get("hybrid", {
+            "rmse": 0.5820, "alpha_svd": 0.3, "alpha_cf": 0.6,
+            "improvement_vs_svd_pct": -18.2,
+        }),
+        "cb": {
+            "v1_precision_cat": 0.571,
+            "v2_precision_cat": 0.781,
+            "improvement_pp": 21.0,
+        },
+        "ranking": _m.get("ranking", {
+            "k5":  {"SVD": {"ndcg": 0.8526, "map": 0.8430, "precision": 0.7831, "recall": 0.8384},
+                    "NCF": {"ndcg": 0.8538, "map": 0.8447, "precision": 0.7843, "recall": 0.8395},
+                    "Hybrid": {"ndcg": 0.8661, "map": 0.8621, "precision": 0.7879, "recall": 0.8428}},
+            "k10": {"SVD": {"ndcg": 0.8523, "map": 0.8416, "precision": 0.7765, "recall": 0.8692},
+                    "NCF": {"ndcg": 0.8536, "map": 0.8436, "precision": 0.7782, "recall": 0.8703},
+                    "Hybrid": {"ndcg": 0.8657, "map": 0.8609, "precision": 0.7784, "recall": 0.8705}},
+        }),
+        "dataset": {
+            "n_interactions": 90753, "n_train": 72602, "n_test": 18151,
+            "n_users": 5982, "n_products": 2000, "sparsity_pct": 99.24,
+            "smartshop_interactions": 16931, "kaggle_interactions": 568454,
+        },
         "_source": "rec_metadata.json" if _m else "fallback_hardcoded",
-        "_version": _REC_META.get("version", "unknown"),
+        "_version": _REC_META.get("version", "v2-final"),
     }
     return {
         "metrics": metrics_out,

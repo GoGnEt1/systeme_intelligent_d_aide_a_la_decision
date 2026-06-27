@@ -54,6 +54,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:8000",   # Django
         "http://localhost:5173",   # React + Vite
+        "http://localhost:3000",   # React + Vite
     ],
     allow_credentials=True,
     allow_methods=["*"],

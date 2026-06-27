@@ -228,7 +228,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # ── URL du microservice ML FastAPI ───────────────────────────
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
 
 # ── Documentation API (drf-spectacular) ─────────────────────

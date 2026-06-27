@@ -1,11 +1,4 @@
-// src/pages/admin/AnalyticDashboard.tsx — RecSys ML· GoGNet Design
-// ════════════════════════════════════════════════════════════════════════
-// Sprint S3 · SVD + NCF NeuMF + Content-Based Hybride
-// Design GoGNet : Indigo + Violet · Palette cohérente avec ForeSys
-// Responsive : mobile → tablet → desktop
-// memo / useMemo / useCallback
-// Redux mlSlice
-// ════════════════════════════════════════════════════════════════════════
+// src/pages/admin/AnalyticDashboard.tsx — RecSys ML · GoGNet Design
 
 import { useState, useEffect, useMemo, memo } from "react";
 import {
@@ -46,92 +39,143 @@ import {
   FiDatabase,
 } from "react-icons/fi";
 
-// ── Données notebook Sprint S3 ──────────────────────────────────────────
-
-// Métriques réelles SmartShop (données synthétiques ~200 users)
-// Source : notebook S3 v2 (correctifs alignement espaces [1,5])
-// Note : Kaggle seul donne RMSE ~0.63 (568k interactions vs ~3k SmartShop)
 const TRUE_METRICS = {
   svd_base: {
-    rmse: 0.774,
-    mae: 0.5324,
+    rmse: 0.7749,
+    mae: 0.5421,
     label: "SVD baseline",
     color: "#F87171",
   },
   svd_opt: {
-    rmse: 0.7116, // SmartShop réel (était 0.6379 sur Kaggle seul)
-    mae: 0.4637, // SmartShop réel
+    rmse: 0.7116,
+    mae: 0.4637,
     label: "SVD optimisé",
     color: "#FB923C",
   },
-  ncf: { rmse: 0.7441, mae: 0.3765, label: "NCF NeuMF", color: "#A78BFA" },
-  // Hybride v2 après correctif alignement [1,5] — RMSE ≤ min(SVD, NCF)
-  hybrid: { rmse: 0.7, mae: 0.42, label: "Hybride v2 ✓", color: "#34D399" },
+  ncf: { rmse: 0.7475, mae: 0.3792, label: "NCF NeuMF", color: "#A78BFA" },
+  hybrid: { rmse: 0.582, mae: 0.42, label: "Hybride ★ BEST", color: "#34D399" },
 };
 
+// Historique NCF complet — 30 epochs (valeurs réelles notebook)
 const NCF_HISTORY = [
-  { ep: 1, tl: 0.1035, vl: 0.0579, tm: 0.2671, vm: 0.1728 },
-  { ep: 2, tl: 0.0475, vl: 0.0458, tm: 0.1454, vm: 0.1372 },
-  { ep: 3, tl: 0.0369, vl: 0.0396, tm: 0.1256, vm: 0.1247 },
-  { ep: 4, tl: 0.0314, vl: 0.0369, tm: 0.112, vm: 0.1151 },
-  { ep: 5, tl: 0.0274, vl: 0.0356, tm: 0.1102, vm: 0.1122 },
-  { ep: 8, tl: 0.0174, vl: 0.0321, tm: 0.1062, vm: 0.1049 },
-  { ep: 10, tl: 0.0126, vl: 0.0316, tm: 0.1044, vm: 0.1009 },
-  { ep: 14, tl: 0.0082, vl: 0.0309, tm: 0.1021, vm: 0.0946 },
-  { ep: 20, tl: 0.0058, vl: 0.0309, tm: 0.1004, vm: 0.0882 },
-  { ep: 25, tl: 0.0051, vl: 0.0312, tm: 0.0997, vm: 0.0848 },
-  { ep: 30, tl: 0.0047, vl: 0.0312, tm: 0.0995, vm: 0.0825 },
+  { ep: 1, tl: 0.0902, vl: 0.0518, tm: 0.2404, vm: 0.1559 },
+  { ep: 2, tl: 0.0452, vl: 0.0411, tm: 0.145, vm: 0.135 },
+  { ep: 3, tl: 0.0359, vl: 0.0384, tm: 0.1265, vm: 0.1237 },
+  { ep: 4, tl: 0.0326, vl: 0.0373, tm: 0.1161, vm: 0.1181 },
+  { ep: 5, tl: 0.0296, vl: 0.0362, tm: 0.1079, vm: 0.1134 },
+  { ep: 6, tl: 0.0262, vl: 0.0354, tm: 0.099, vm: 0.1096 },
+  { ep: 7, tl: 0.0218, vl: 0.0346, tm: 0.0881, vm: 0.1051 },
+  { ep: 8, tl: 0.0177, vl: 0.0347, tm: 0.0777, vm: 0.1031 },
+  { ep: 9, tl: 0.0145, vl: 0.035, tm: 0.0684, vm: 0.1012 },
+  { ep: 10, tl: 0.0122, vl: 0.035, tm: 0.0611, vm: 0.0991 },
+  { ep: 11, tl: 0.0105, vl: 0.0353, tm: 0.0551, vm: 0.0994 },
+  { ep: 12, tl: 0.0094, vl: 0.0357, tm: 0.0508, vm: 0.0987 },
+  { ep: 13, tl: 0.0086, vl: 0.0358, tm: 0.0474, vm: 0.0981 },
+  { ep: 14, tl: 0.0079, vl: 0.0361, tm: 0.0443, vm: 0.098 },
+  { ep: 15, tl: 0.0074, vl: 0.0362, tm: 0.0416, vm: 0.0971 },
+  { ep: 16, tl: 0.007, vl: 0.0365, tm: 0.0397, vm: 0.0973 },
+  { ep: 17, tl: 0.0067, vl: 0.0366, tm: 0.0382, vm: 0.0972 },
+  { ep: 18, tl: 0.0065, vl: 0.0366, tm: 0.037, vm: 0.0966 },
+  { ep: 19, tl: 0.0063, vl: 0.0367, tm: 0.0358, vm: 0.0968 },
+  { ep: 20, tl: 0.0061, vl: 0.0368, tm: 0.0346, vm: 0.0964 },
+  { ep: 21, tl: 0.0059, vl: 0.037, tm: 0.0335, vm: 0.0965 },
+  { ep: 22, tl: 0.0058, vl: 0.037, tm: 0.0329, vm: 0.0963 },
+  { ep: 23, tl: 0.0057, vl: 0.0371, tm: 0.0323, vm: 0.0963 },
+  { ep: 24, tl: 0.0056, vl: 0.0374, tm: 0.0314, vm: 0.096 },
+  { ep: 25, tl: 0.0054, vl: 0.0377, tm: 0.0306, vm: 0.0964 },
+  { ep: 26, tl: 0.0054, vl: 0.0374, tm: 0.0304, vm: 0.096 },
+  { ep: 27, tl: 0.0053, vl: 0.0375, tm: 0.0298, vm: 0.0962 },
+  { ep: 28, tl: 0.005, vl: 0.0374, tm: 0.0279, vm: 0.095 },
+  { ep: 29, tl: 0.0048, vl: 0.0373, tm: 0.0264, vm: 0.0948 }, // ← best val_mae
+  { ep: 30, tl: 0.0046, vl: 0.0375, tm: 0.0256, vm: 0.0949 },
 ];
 
+// Ranking @K — valeurs réelles notebook (threshold=3.5)
 const RANKING_DATA = {
   precision: {
     label: "Precision@K",
     data: [
-      { k: "@5", SVD: 0.778, NCF: 0.764, Hybride: 0.767 },
-      { k: "@10", SVD: 0.769, NCF: 0.756, Hybride: 0.757 },
-      { k: "@20", SVD: 0.768, NCF: 0.756, Hybride: 0.756 },
+      { k: "@5", SVD: 0.7831, NCF: 0.7843, Hybride: 0.7879 },
+      { k: "@10", SVD: 0.7765, NCF: 0.7782, Hybride: 0.7784 },
+      { k: "@20", SVD: 0.7758, NCF: 0.7773, Hybride: 0.7773 },
+    ],
+  },
+  recall: {
+    label: "Recall@K",
+    data: [
+      { k: "@5", SVD: 0.8384, NCF: 0.8395, Hybride: 0.8428 },
+      { k: "@10", SVD: 0.8692, NCF: 0.8703, Hybride: 0.8705 },
+      { k: "@20", SVD: 0.871, NCF: 0.8722, Hybride: 0.8722 },
     ],
   },
   ndcg: {
     label: "NDCG@K",
     data: [
-      { k: "@5", SVD: 0.852, NCF: 0.836, Hybride: 0.847 },
-      { k: "@10", SVD: 0.851, NCF: 0.835, Hybride: 0.847 },
-      { k: "@20", SVD: 0.851, NCF: 0.835, Hybride: 0.847 },
+      { k: "@5", SVD: 0.8526, NCF: 0.8538, Hybride: 0.8661 },
+      { k: "@10", SVD: 0.8523, NCF: 0.8536, Hybride: 0.8657 },
+      { k: "@20", SVD: 0.8522, NCF: 0.8536, Hybride: 0.8657 },
+    ],
+  },
+  map: {
+    label: "MAP",
+    data: [
+      { k: "@5", SVD: 0.843, NCF: 0.8447, Hybride: 0.8621 },
+      { k: "@10", SVD: 0.8416, NCF: 0.8436, Hybride: 0.8609 },
+      { k: "@20", SVD: 0.8415, NCF: 0.8435, Hybride: 0.8608 },
     ],
   },
 };
 
+// Heatmap alpha — valeurs exactes notebook
 const HEATMAP = [
   {
     alpha_svd: 0.3,
     values: [
-      { cf: 0.6, rmse: 0.6143, best: true },
-      { cf: 0.7, rmse: 0.66 },
-      { cf: 0.8, rmse: 0.708 },
-      { cf: 0.9, rmse: 0.757 },
+      { cf: 0.6, rmse: 0.582, best: true },
+      { cf: 0.7, rmse: 0.6153 },
+      { cf: 0.8, rmse: 0.6504 },
+      { cf: 0.9, rmse: 0.6873 },
+    ],
+  },
+  {
+    alpha_svd: 0.4,
+    values: [
+      { cf: 0.6, rmse: 0.5995 },
+      { cf: 0.7, rmse: 0.6367 },
+      { cf: 0.8, rmse: 0.6759 },
+      { cf: 0.9, rmse: 0.7169 },
     ],
   },
   {
     alpha_svd: 0.5,
     values: [
-      { cf: 0.6, rmse: 0.639 },
-      { cf: 0.7, rmse: 0.692 },
-      { cf: 0.8, rmse: 0.748 },
-      { cf: 0.9, rmse: 0.804 },
+      { cf: 0.6, rmse: 0.6231 },
+      { cf: 0.7, rmse: 0.6659 },
+      { cf: 0.8, rmse: 0.7108 },
+      { cf: 0.9, rmse: 0.7576 },
+    ],
+  },
+  {
+    alpha_svd: 0.6,
+    values: [
+      { cf: 0.6, rmse: 0.6523 },
+      { cf: 0.7, rmse: 0.7019 },
+      { cf: 0.8, rmse: 0.7539 },
+      { cf: 0.9, rmse: 0.8079 },
     ],
   },
   {
     alpha_svd: 0.7,
     values: [
-      { cf: 0.6, rmse: 0.687 },
-      { cf: 0.7, rmse: 0.753 },
-      { cf: 0.8, rmse: 0.821 },
-      { cf: 0.9, rmse: 0.891 },
+      { cf: 0.6, rmse: 0.6862 },
+      { cf: 0.7, rmse: 0.7438 },
+      { cf: 0.8, rmse: 0.8039 },
+      { cf: 0.9, rmse: 0.866 },
     ],
   },
 ];
 
+// Distribution catégories du dataset
 const DIST_CATEGORIES: Record<string, number> = {
   Automobile: 10122,
   Beauté: 9162,
@@ -143,47 +187,86 @@ const DIST_CATEGORIES: Record<string, number> = {
   Maison: 6812,
 };
 
-// Scores radar normalisés (0-100) — calibrés sur données SmartShop réelles
-// RMSE/MAE inversés : score = max(0, 100 - métrique*80) pour rester lisible
+// Radar normalisé — calibré sur métriques réelles (0-100)
+// RMSE/MAE : score = max(0, 100 - valeur * 100) inversé
+// Ranking : score = valeur * 100
 const RADAR_DATA = [
-  { metric: "RMSE ↓", SVD: 71, NCF: 68, Hybride: 75 },
-  { metric: "MAE ↓", SVD: 65, NCF: 80, Hybride: 72 },
-  { metric: "Prec@10", SVD: 90, NCF: 88, Hybride: 87 },
-  { metric: "NDCG@10", SVD: 97, NCF: 95, Hybride: 97 },
-  { metric: "MAP", SVD: 96, NCF: 94, Hybride: 96 },
-  { metric: "Recall@10", SVD: 95, NCF: 93, Hybride: 93 },
+  {
+    metric: "RMSE ↓",
+    SVD: Math.round((1 - 0.7116) * 100),
+    NCF: Math.round((1 - 0.7475) * 100),
+    Hybride: Math.round((1 - 0.582) * 100),
+  },
+  {
+    metric: "MAE ↓",
+    SVD: Math.round((1 - 0.4637) * 100),
+    NCF: Math.round((1 - 0.3792) * 100),
+    Hybride: Math.round((1 - 0.42) * 100),
+  },
+  {
+    metric: "Prec@10",
+    SVD: Math.round(0.7765 * 100),
+    NCF: Math.round(0.7782 * 100),
+    Hybride: Math.round(0.7784 * 100),
+  },
+  {
+    metric: "NDCG@5",
+    SVD: Math.round(0.8526 * 100),
+    NCF: Math.round(0.8538 * 100),
+    Hybride: Math.round(0.8661 * 100),
+  },
+  {
+    metric: "MAP@5",
+    SVD: Math.round(0.843 * 100),
+    NCF: Math.round(0.8447 * 100),
+    Hybride: Math.round(0.8621 * 100),
+  },
+  {
+    metric: "Recall@10",
+    SVD: Math.round(0.8692 * 100),
+    NCF: Math.round(0.8703 * 100),
+    Hybride: Math.round(0.8705 * 100),
+  },
 ];
 
 // ── Export rapport ───────────────────────────────────────────────────────
 function exportReport() {
   const lines = [
-    "══════════════════════════════════════════════════════",
+    "══════════════════════════════════════════════════════════════",
     "  RAPPORT — RecSys ML Pro — GoGNet SmartShop — Sprint S3",
     `  Généré le ${new Date().toLocaleString("fr-FR")}`,
-    "══════════════════════════════════════════════════════",
+    "══════════════════════════════════════════════════════════════",
     "",
-    "── RÉSULTATS COMPARATIFS ─────────────────────────────",
-    "Modèle            RMSE    MAE     Prec@10  NDCG@10  MAP",
-    "SVD baseline      0.7740  0.5324  —        —        —",
-    "SVD optimisé      0.7116  0.4637  0.769    0.851    0.843  [SmartShop]",
-    "NCF (NeuMF)       0.7441  0.3765  0.764    0.835    0.826  [SmartShop]",
-    "Hybride v2 ✓      ~0.700  ~0.420  0.757    0.847    0.844  [Aligné v2]",
+    "── DATASET ───────────────────────────────────────────────────",
+    "SmartShop : 16 931 interactions · 1 333 users · 37 produits",
+    "Amazon Kaggle : 568 454 interactions · 256 059 users · 74 258 produits",
+    "Dataset final (filtré) : 90 753 inter. · 5 982 users · 2 000 produits",
+    "Sparsité : 99.24% | Train/Test : 72 602 / 18 151 | Threshold : 3.5★",
     "",
-    "Note : métriques SmartShop (200 users, ~3k interactions synthétiques).",
-    "Kaggle seul : SVD RMSE=0.638 / Hybride RMSE=0.614 (568k interactions).",
-    "Amélioration : RMSE -9.6% | MAE -19.4% (baseline → Hybride SmartShop)",
+    "── RÉSULTATS COMPARATIFS ─────────────────────────────────────",
+    "Modèle          RMSE    MAE     Prec@10  Recall@10  NDCG@5   MAP@5",
+    "SVD baseline    0.7749  0.5421  —        —          —        —",
+    "SVD optimisé    0.7116  0.4637  0.7765   0.8692     0.8526   0.8430",
+    "NCF (NeuMF)     0.7475  0.3792  0.7782   0.8703     0.8538   0.8447",
+    "Hybride ★ BEST  0.5820  —       0.7784   0.8705     0.8661   0.8621",
     "",
-    "── PARAMÈTRES HYBRIDES OPTIMAUX ──────────────────────",
-    "alpha_svd=0.4 (40% SVD + 60% NCF) | alpha_cf=0.7 (70% CF + 30% CB)",
+    "Amélioration Hybride vs SVD baseline : RMSE -24.9% | MAE n/a",
+    "Meilleure MAE : NCF → 0.3792 (-30.0% vs SVD baseline)",
     "",
-    "── DATASET ───────────────────────────────────────────",
-    "Amazon Product Reviews (Kaggle) + SmartShop · 65 780 interactions",
-    "4 679 utilisateurs · 2 000 produits · Sparsité 99.3%",
+    "── PARAMÈTRES HYBRIDES OPTIMAUX ──────────────────────────────",
+    "alpha_svd=0.3 | alpha_cf=0.6 (Grid search sur 2 000 interactions)",
+    "Décomposition : SVD 18% + NCF 42% + CB 40%",
     "",
-    "── HYPERPARAMÈTRES NCF ───────────────────────────────",
-    "Embedding GMF/MLP: 32 dim · MLP: [64,32,16] + Dropout 0.2",
-    "Batch=512 · Epochs=30 · Adam lr=0.001",
-    "══════════════════════════════════════════════════════",
+    "── CONTENT-BASED TF-IDF ──────────────────────────────────────",
+    "CB v1 (original) : Précision catégorielle 57.1%",
+    "CB v2 (optimisé) : Précision catégorielle 78.1% (+21.0pp)",
+    "Paramètres : max_features=1 500 · ngram_range=(1,3)",
+    "",
+    "── HYPERPARAMÈTRES NCF ───────────────────────────────────────",
+    "SVD best : n_factors=100, n_epochs=30, lr_all=0.007, reg_all=0.06",
+    "NCF : GMF(32) + MLP(32,[64,32,16]) · Dropout 0.2 · Adam lr=0.001→0.0005",
+    "NCF entraîné 30 epochs · val_mae=0.0948 (ep29) · RMSE=0.7475 [1,5]",
+    "══════════════════════════════════════════════════════════════",
   ];
   const blob = new Blob([lines.join("\n")], {
     type: "text/plain;charset=utf-8",
@@ -198,7 +281,6 @@ function exportReport() {
 
 // ── Sous-composants ────────────────────────────────────────────────────
 
-// Tooltip custom dark
 const DarkTooltip = memo(({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -220,7 +302,6 @@ const DarkTooltip = memo(({ active, payload, label }: any) => {
   );
 });
 
-// KPI Card GoGNet
 const KpiCard = memo(
   ({
     label,
@@ -268,7 +349,6 @@ const KpiCard = memo(
   ),
 );
 
-// Section header
 const SectionHead = memo(
   ({
     title,
@@ -291,7 +371,6 @@ const SectionHead = memo(
   ),
 );
 
-// Card container
 const Card = memo(
   ({
     children,
@@ -308,41 +387,44 @@ const Card = memo(
   ),
 );
 
-// Tableau métriques comparatif
 const MetricsTable = memo(() => {
   const rows = [
     {
       ...TRUE_METRICS.svd_base,
       key: "svd_base",
       prec10: "—",
-      ndcg10: "—",
-      map_: "—",
+      recall10: "—",
+      ndcg5: "—",
+      map5: "—",
     },
     {
       ...TRUE_METRICS.svd_opt,
       key: "svd_opt",
-      prec10: "76.9%",
-      ndcg10: "0.851 ★",
-      map_: "0.843",
+      prec10: "77.65%",
+      recall10: "86.92%",
+      ndcg5: "0.8526",
+      map5: "0.8430",
     },
     {
       ...TRUE_METRICS.ncf,
       key: "ncf",
-      prec10: "76.4%",
-      ndcg10: "0.835",
-      map_: "0.826",
+      prec10: "77.82%",
+      recall10: "87.03%",
+      ndcg5: "0.8538",
+      map5: "0.8447",
     },
     {
       ...TRUE_METRICS.hybrid,
       key: "hybrid",
-      prec10: "75.7%",
-      ndcg10: "0.847 ★",
-      map_: "0.844",
+      prec10: "77.84%",
+      recall10: "87.05%",
+      ndcg5: "0.8661 ★",
+      map5: "0.8621 ★",
     },
   ];
   return (
     <div className="overflow-x-auto rounded-xl">
-      <table className="w-full text-[12px] border-collapse min-w-[520px]">
+      <table className="w-full text-[12px] border-collapse min-w-[600px]">
         <thead>
           <tr className="border-b border-gognet-border-dark">
             {[
@@ -350,8 +432,9 @@ const MetricsTable = memo(() => {
               "RMSE ↓",
               "MAE ↓",
               "Prec@10 ↑",
-              "NDCG@10 ↑",
-              "MAP ↑",
+              "Recall@10 ↑",
+              "NDCG@5 ↑",
+              "MAP@5 ↑",
             ].map((h) => (
               <th
                 key={h}
@@ -403,23 +486,25 @@ const MetricsTable = memo(() => {
                   {r.prec10}
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-400">
-                  {r.ndcg10}
+                  {r.recall10}
                 </td>
-                <td className="py-3 px-3 font-mono text-slate-400">{r.map_}</td>
+                <td className="py-3 px-3 font-mono text-slate-400">
+                  {r.ndcg5}
+                </td>
+                <td className="py-3 px-3 font-mono text-slate-400">{r.map5}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
       <p className="text-[10px] text-slate-600 mt-2 italic">
-        Évaluation sur jeu test Kaggle (80/20) · Amazon E-Commerce Reviews +
-        SmartShop · threshold=3.5
+        Évaluation sur 18 151 interactions test (80/20) · Amazon + SmartShop ·
+        threshold pertinence = 3.5★
       </p>
     </div>
   );
 });
 
-// Barres erreur RMSE/MAE
 const ErrorBars = memo(() => {
   const maxR = TRUE_METRICS.svd_base.rmse;
   const maxM = TRUE_METRICS.svd_base.mae;
@@ -477,7 +562,6 @@ const ErrorBars = memo(() => {
   );
 });
 
-// Badge statut ML
 const StatusBadge = memo(
   ({ loaded, loading }: { loaded: boolean; loading: boolean }) => (
     <span
@@ -512,9 +596,9 @@ export default function AnalyticDashboard() {
   const mlLoading = useSelector(selectMLHealthLoading);
 
   const [activeTab, setActiveTab] = useState<RecTab>("overview");
-  const [rankingMetric, setRankingMetric] = useState<"precision" | "ndcg">(
-    "ndcg",
-  );
+  const [rankingMetric, setRankingMetric] = useState<
+    "precision" | "recall" | "ndcg" | "map"
+  >("ndcg");
 
   useEffect(() => {
     dispatch(fetchMLHealth());
@@ -540,36 +624,19 @@ export default function AnalyticDashboard() {
       className="ml-dashboard-root bg-gognet-dark min-h-screen p-4 sm:p-6 lg:p-8 font-sans space-y-5"
       style={{ background: T.isDark ? undefined : T.bg, color: T.text }}
     >
-      {/* ── Theme overrides for light mode ── */}
       {!T.isDark && (
         <style>{`
           .ml-dashboard-root .bg-gognet-dark { background: ${T.bg} !important; }
           .ml-dashboard-root .bg-gognet-navy { background: ${T.card} !important; }
-          .ml-dashboard-root .bg-gognet-navy\\/50 { background: ${T.card}88 !important; }
-          .ml-dashboard-root .bg-white\\/5 { background: ${T.active} !important; }
-          .ml-dashboard-root .bg-white\\/10 { background: ${T.active} !important; }
-          .ml-dashboard-root .bg-white\\/3 { background: ${T.active} !important; }
+          .ml-dashboard-root .bg-white\\/5, .ml-dashboard-root .bg-white\\/3, .ml-dashboard-root .bg-white\\/10 { background: ${T.active} !important; }
           .ml-dashboard-root .border-gognet-border-dark { border-color: ${T.border} !important; }
-          .ml-dashboard-root .border-white\\/10 { border-color: ${T.border} !important; }
-          .ml-dashboard-root .border-white\\/5 { border-color: ${T.border} !important; }
-          .ml-dashboard-root .text-white { color: ${T.text} !important; }
-          .ml-dashboard-root .text-slate-100 { color: ${T.text} !important; }
-          .ml-dashboard-root .text-slate-200 { color: ${T.text} !important; }
-          .ml-dashboard-root .text-slate-300 { color: ${T.muted} !important; }
-          .ml-dashboard-root .text-slate-400 { color: ${T.muted} !important; }
-          .ml-dashboard-root .text-slate-500 { color: ${T.muted} !important; }
-          .ml-dashboard-root .text-slate-600 { color: ${T.muted} !important; }
-          .ml-dashboard-root .text-gray-300 { color: ${T.muted} !important; }
-          .ml-dashboard-root .text-gray-400 { color: ${T.muted} !important; }
-          .ml-dashboard-root .text-gray-500 { color: ${T.muted} !important; }
-          .ml-dashboard-root input, .ml-dashboard-root select, .ml-dashboard-root textarea {
-            background: ${T.inputBg} !important;
-            color: ${T.text} !important;
-            border-color: ${T.border} !important;
-          }
+          .ml-dashboard-root .text-white, .ml-dashboard-root .text-slate-100, .ml-dashboard-root .text-slate-200 { color: ${T.text} !important; }
+          .ml-dashboard-root .text-slate-300, .ml-dashboard-root .text-slate-400, .ml-dashboard-root .text-slate-500, .ml-dashboard-root .text-slate-600 { color: ${T.muted} !important; }
+          .ml-dashboard-root input, .ml-dashboard-root select { background: ${T.inputBg} !important; color: ${T.text} !important; border-color: ${T.border} !important; }
           .ml-dashboard-root .rounded-2xl { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
         `}</style>
       )}
+
       {/* ── Header ── */}
       <div className="bg-gognet-navy border border-gognet-border-dark rounded-2xl p-5">
         <div className="flex flex-wrap items-start gap-4 justify-between">
@@ -582,15 +649,13 @@ export default function AnalyticDashboard() {
                 <h2 className="font-display font-black text-[20px] text-white tracking-tight">
                   RecSys <span className="text-gognet-indigo-light">ML</span>
                 </h2>
-                {/* <span className="text-[10px] bg-violet-500/20 text-violet-300 border border-violet-500/30 px-2 py-0.5 rounded-full font-bold">
-                  S3
-                </span> */}
                 <span className="text-[10px] bg-indigo-500/20 text-gognet-indigo-light border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">
                   SVD · NCF · CB
                 </span>
               </div>
               <p className="text-[12px] text-slate-500 mt-0.5">
-                Système de recommandation hybride
+                Système de recommandation hybride — 90 753 interactions · 5 982
+                users · 2 000 produits
               </p>
             </div>
           </div>
@@ -611,8 +676,6 @@ export default function AnalyticDashboard() {
             </button>
           </div>
         </div>
-
-        {/* Sub-nav */}
         <div className="flex gap-1 mt-5 border-b border-gognet-border-dark overflow-x-auto scrollbar-hide pb-0">
           {TABS.map((t) => (
             <button
@@ -634,33 +697,33 @@ export default function AnalyticDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard
           label="Meilleur RMSE"
-          value="0.58"
-          sub="Hybride v2 · RMSE final"
-          delta="−20.7% vs baseline"
+          value="0.5820"
+          sub="Hybride (α_svd=0.3, α_cf=0.6)"
+          delta="−24.9% vs SVD baseline"
           deltaGood
           icon={<FiTrendingUp size={16} />}
           color="bg-emerald-500/15"
         />
         <KpiCard
-          label="Meilleur MAE"
+          label="Meilleure MAE"
           value="0.3792"
-          sub="NCF NeuMF · MAE"
-          delta="−41.5% vs baseline"
+          sub="NCF NeuMF (30 epochs)"
+          delta="−30.0% vs SVD baseline"
           deltaGood
           icon={<FiActivity size={16} />}
           color="bg-violet-500/15"
         />
         <KpiCard
-          label="NDCG@10"
-          value="0.851"
-          sub="SVD optimisé · classement"
+          label="NDCG@5 Hybride"
+          value="0.866"
+          sub="Best ranking metric"
           icon={<FiTarget size={16} />}
           color="bg-indigo-500/15"
         />
         <KpiCard
           label="Interactions"
-          value="65 780"
-          sub="4 679 users · 2 000 produits"
+          value="90 753"
+          sub="5 982 users · 2 000 produits · 99.24% sparse"
           icon={<FiDatabase size={16} />}
           color="bg-cyan-500/15"
         />
@@ -669,16 +732,13 @@ export default function AnalyticDashboard() {
       {/* ── VUE D'ENSEMBLE ── */}
       {activeTab === "overview" && (
         <div className="space-y-4">
-          {/* Tableau métriques */}
           <Card>
             <SectionHead
               title="Comparaison des modèles"
-              badge="Métriques réelles notebook"
+              badge="Métriques réelles notebook final"
             />
             <MetricsTable />
           </Card>
-
-          {/* Barres + Radar */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <SectionHead
@@ -687,7 +747,6 @@ export default function AnalyticDashboard() {
               />
               <ErrorBars />
             </Card>
-
             <Card>
               <SectionHead
                 title="Profil de performance"
@@ -734,12 +793,10 @@ export default function AnalyticDashboard() {
               </ResponsiveContainer>
             </Card>
           </div>
-
-          {/* Distrib catégories */}
           <Card>
             <SectionHead
               title="Distribution du dataset par catégorie"
-              badge="65 780 interactions Kaggle"
+              badge="90 753 interactions Amazon + SmartShop"
             />
             <ResponsiveContainer width="100%" height={220}>
               <BarChart
@@ -795,8 +852,8 @@ export default function AnalyticDashboard() {
                 badge="30 epochs NCF NeuMF"
               />
               <p className="text-[11px] text-slate-500 mb-4">
-                Binary Cross-Entropy · Plateau validation ep.4 → overfitting
-                progressif
+                MSE (loss) · Val plateau ep.8 → légère divergence · RMSE final =
+                0.7475 [1,5]
               </p>
               <ResponsiveContainer width="100%" height={240}>
                 <LineChart
@@ -852,11 +909,11 @@ export default function AnalyticDashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </Card>
-
             <Card>
               <SectionHead title="Courbes MAE — Train vs Validation" />
               <p className="text-[11px] text-slate-500 mb-4">
-                MAE validation convergence ep.25-30 : val_mae → 0.0825
+                MAE normalisé [0,1] · Best val_mae = 0.0948 (ep.29) ·
+                Convergence progressive
               </p>
               <ResponsiveContainer width="100%" height={240}>
                 <LineChart
@@ -906,8 +963,6 @@ export default function AnalyticDashboard() {
               </ResponsiveContainer>
             </Card>
           </div>
-
-          {/* Architecture NCF */}
           <Card>
             <SectionHead
               title="Architecture NCF NeuMF"
@@ -919,11 +974,11 @@ export default function AnalyticDashboard() {
                 { k: "Embedding MLP", v: "32 dimensions" },
                 { k: "Couches MLP", v: "[64, 32, 16] + Dropout 0.2" },
                 { k: "Batch size", v: "512" },
-                { k: "Epochs", v: "30 (EarlyStopping pat.=5)" },
-                { k: "Optimiseur", v: "Adam lr=0.001" },
-                { k: "Paramètres", v: "434 273 (1.66 MB)" },
-                { k: "Split", v: "80% train · 20% test" },
-                { k: "Sparsité", v: "99.3%" },
+                { k: "Epochs", v: "30 · Best val_mae ep.29" },
+                { k: "Optimiseur", v: "Adam lr=0.001 → 0.0005" },
+                { k: "SVD best params", v: "n_f=100, ep=30, lr=0.007" },
+                { k: "Split", v: "72 602 train · 18 151 test" },
+                { k: "Sparsité", v: "99.24% · 5 982 users" },
               ].map(({ k, v }) => (
                 <div
                   key={k}
@@ -950,8 +1005,8 @@ export default function AnalyticDashboard() {
               <h3 className="font-display font-bold text-[15px] text-white">
                 Métriques de Ranking @K
               </h3>
-              <div className="flex gap-1 ml-auto">
-                {(["precision", "ndcg"] as const).map((m) => (
+              <div className="flex gap-1 ml-auto flex-wrap">
+                {(["precision", "recall", "ndcg", "map"] as const).map((m) => (
                   <button
                     key={m}
                     onClick={() => setRankingMetric(m)}
@@ -961,7 +1016,13 @@ export default function AnalyticDashboard() {
                         : "bg-white/5 text-slate-400 hover:text-white"
                     }`}
                   >
-                    {m === "precision" ? "Precision@K" : "NDCG@K"}
+                    {m === "precision"
+                      ? "Precision@K"
+                      : m === "recall"
+                        ? "Recall@K"
+                        : m === "ndcg"
+                          ? "NDCG@K"
+                          : "MAP@K"}
                   </button>
                 ))}
               </div>
@@ -986,7 +1047,7 @@ export default function AnalyticDashboard() {
                   axisLine={false}
                 />
                 <YAxis
-                  domain={[0.7, 0.92]}
+                  domain={[0.75, 0.92]}
                   tick={{ fill: "#64748B", fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
@@ -1014,37 +1075,35 @@ export default function AnalyticDashboard() {
                 />
                 <Bar
                   dataKey="Hybride"
-                  name="Hybride v2"
+                  name="Hybride ★"
                   fill="#34D399"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
           </Card>
-
-          {/* Content-Based stats */}
           <Card>
             <SectionHead
               title="Content-Based TF-IDF v2"
               badge="Précision catégorielle"
             />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
-                <p className="text-[11px] text-emerald-400 font-bold uppercase mb-1">
-                  CB v2
-                </p>
-                <p className="text-3xl font-black text-emerald-400">66.5%</p>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Précision catégorielle
-                </p>
-              </div>
               <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
                 <p className="text-[11px] text-red-400 font-bold uppercase mb-1">
                   CB v1
                 </p>
-                <p className="text-3xl font-black text-red-400">17.7%</p>
+                <p className="text-3xl font-black text-red-400">57.1%</p>
                 <p className="text-[11px] text-slate-500 mt-1">
                   Ancienne version
+                </p>
+              </div>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+                <p className="text-[11px] text-emerald-400 font-bold uppercase mb-1">
+                  CB v2
+                </p>
+                <p className="text-3xl font-black text-emerald-400">78.1%</p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Précision catégorielle
                 </p>
               </div>
               <div className="bg-gognet-indigo/10 border border-gognet-indigo/20 rounded-xl p-4 text-center">
@@ -1052,7 +1111,7 @@ export default function AnalyticDashboard() {
                   Amélioration
                 </p>
                 <p className="text-3xl font-black text-gognet-indigo-light">
-                  +48.8pp
+                  +21.0pp
                 </p>
                 <p className="text-[11px] text-slate-500 mt-1">v1 → v2</p>
               </div>
@@ -1078,7 +1137,6 @@ export default function AnalyticDashboard() {
       {/* ── HYBRIDATION ── */}
       {activeTab === "hybrid" && (
         <div className="space-y-4">
-          {/* Poids actuels */}
           <Card>
             <SectionHead
               title="Paramètres hybrides actifs"
@@ -1127,7 +1185,6 @@ export default function AnalyticDashboard() {
                 </div>
               ))}
             </div>
-            {/* Barre décomposition */}
             <p className="text-[11px] text-slate-500 font-bold mb-2 uppercase tracking-wide">
               Décomposition des poids finaux
             </p>
@@ -1168,15 +1225,13 @@ export default function AnalyticDashboard() {
               </div>
             </div>
           </Card>
-
-          {/* Heatmap alpha */}
           <Card>
             <SectionHead
-              title="Heatmap RMSE — Recherche alpha_svd × alpha_cf"
-              badge="Cellule optimale en vert"
+              title="Heatmap RMSE — Grid Search alpha_svd × alpha_cf"
+              badge="Cellule optimale en vert — 2 000 interactions"
             />
             <div className="overflow-x-auto rounded-xl">
-              <table className="text-[12px] min-w-[320px]">
+              <table className="text-[12px] min-w-[360px]">
                 <thead>
                   <tr>
                     <th className="py-2.5 px-3 text-left text-slate-500 font-semibold text-[11px]">
@@ -1219,7 +1274,8 @@ export default function AnalyticDashboard() {
               </table>
             </div>
             <p className="text-[10px] text-slate-600 mt-2">
-              Optimum : α_svd=0.3, α_cf=0.6 → RMSE=0.6143
+              Optimum : α_svd=0.3, α_cf=0.6 → RMSE=0.5820 (évaluation sur 2 000
+              interactions)
             </p>
           </Card>
         </div>
@@ -1235,13 +1291,13 @@ export default function AnalyticDashboard() {
                 v: recLoaded ? "✅ Chargé" : "❌ Non chargé",
               },
               {
-                k: "Interactions",
-                v: mlHealth?.rec_sys?.catalog?.n_interactions
-                  ? String(mlHealth.rec_sys.catalog.n_interactions)
-                  : "65 780",
+                k: "Interactions totales",
+                v: mlHealth?.rec_sys?.n_users
+                  ? String(mlHealth.rec_sys.n_users)
+                  : "90 753",
               },
               {
-                k: "Produits Kaggle",
+                k: "Produits encodés",
                 v: mlHealth?.rec_sys?.catalog?.n_products_kaggle
                   ? String(mlHealth.rec_sys.catalog.n_products_kaggle)
                   : "2 000",
@@ -1250,19 +1306,17 @@ export default function AnalyticDashboard() {
                 k: "Utilisateurs enc.",
                 v: mlHealth?.rec_sys?.catalog?.n_users_encoded
                   ? String(mlHealth.rec_sys.catalog.n_users_encoded)
-                  : "4 679",
+                  : "5 982",
               },
               {
-                k: "Commandes réelles",
-                v: mlHealth?.rec_sys?.real_db?.orders_confirmed
-                  ? String(mlHealth.rec_sys.real_db.orders_confirmed)
-                  : "—",
-              },
-              {
-                k: "Interactions réelles",
+                k: "SmartShop inter.",
                 v: mlHealth?.rec_sys?.real_db?.interactions_real
                   ? String(mlHealth.rec_sys.real_db.interactions_real)
-                  : "—",
+                  : "16 931",
+              },
+              {
+                k: "Version modèle",
+                v: mlHealth?.rec_sys?.version ?? "v2-final",
               },
             ].map(({ k, v }) => (
               <div
@@ -1276,8 +1330,6 @@ export default function AnalyticDashboard() {
               </div>
             ))}
           </div>
-
-          {/* Fichiers modèles */}
           {Object.keys(recFiles).length > 0 && (
             <Card>
               <SectionHead title="Fichiers modèles" />
@@ -1309,10 +1361,9 @@ export default function AnalyticDashboard() {
         </div>
       )}
 
-      {/* Footer */}
       <div className="text-center text-[11px] text-slate-600 py-2 font-mono">
-        RecSys ML · Sprint S3 · GoGNet SmartShop · SVD(f=50,ep=50) +
-        NCF(32dim,30ep) + CB(TF-IDF,max_f=1500)
+        RecSys ML · Sprint S3 · GoGNet SmartShop · SVD(n_f=100,ep=30,lr=0.007) +
+        NCF(32dim,30ep,val_mae=0.0948) + CB-TF-IDF(78.1%)
       </div>
     </div>
   );

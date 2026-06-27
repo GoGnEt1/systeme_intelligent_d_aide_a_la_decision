@@ -1,28 +1,24 @@
 """
 =============================================================
- apps/products/views.py
+ apps/products/views.py — VERSION CORRIGÉE + ADMIN CRUD
+ Corrections :
+   - ProductViewSet expose tous les statuts pour admin
+   - AdminProductViewSet : CRUD complet sans filtre status=ACTIVE
+   - CategoryViewSet : écriture autorisée pour admin
 =============================================================
 """
-from django.db.models import Avg, Count, Q
-from django.db.models.deletion import ProtectedError
-from rest_framework import viewsets, permissions, filters, status
+from rest_framework import viewsets, generics, permissions, filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as rf_filters
-from .models import Category, Product, Review, ProductImage
+from .models import Category, Product, Review
 from .serializers import (
     CategorySerializer, ProductListSerializer,
     ProductDetailSerializer, ReviewSerializer,
-    AdminProductSerializer, ProductImageSerializer,
+    AdminProductSerializer,
 )
 from apps.orders.models import OrderItem
-
-from rest_framework.parsers import MultiPartParser, FormParser
-from django.shortcuts import get_object_or_404
-import os
-from rest_framework.views import APIView
 
 
 
@@ -41,18 +37,23 @@ class IsAdmin(permissions.BasePermission):
 
 class ProductFilter(rf_filters.FilterSet):
     """Filtres avancés : prix min/max, catégorie, stock, promo"""
-    price_min     = rf_filters.NumberFilter(field_name='price', lookup_expr='gte')
-    price_max     = rf_filters.NumberFilter(field_name='price', lookup_expr='lte')
-    category      = rf_filters.CharFilter(method='filter_by_category')
+    price_min = rf_filters.NumberFilter(field_name='price', lookup_expr='gte')
+    price_max = rf_filters.NumberFilter(field_name='price', lookup_expr='lte')
+    category  = rf_filters.CharFilter(method='filter_by_category')
     category_name = rf_filters.CharFilter(field_name='category__name', lookup_expr='iexact')
-    in_stock      = rf_filters.BooleanFilter(field_name='stock_quantity', method='filter_in_stock')
-    on_sale       = rf_filters.BooleanFilter(method='filter_on_sale')
+    in_stock  = rf_filters.BooleanFilter(field_name='stock_quantity', method='filter_in_stock')
+    on_sale   = rf_filters.BooleanFilter(method='filter_on_sale')
 
     class Meta:
         model  = Product
         fields = ['category', 'is_featured', 'status']
 
     def filter_by_category(self, queryset, name, value):
+        """
+        Si le slug correspond à une catégorie parent → retourne les produits
+        de toutes ses sous-catégories + la catégorie elle-même.
+        Si le slug correspond à une sous-catégorie → filtre direct.
+        """
         try:
             cat = Category.objects.get(slug=value, is_active=True)
             if cat.parent is None:
@@ -77,29 +78,25 @@ class ProductFilter(rf_filters.FilterSet):
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """
-    GET  /api/products/categories/        → liste des catégories racines avec enfants
+    GET  /api/products/categories/       → liste des catégories racines avec enfants
     GET  /api/products/categories/{slug}/ → détail + sous-catégories
-    POST/PUT/PATCH/DELETE                 → admin uniquement
+    GET  /api/products/categories/?page_size=200 → toutes les catégories (admin)
+    GET  /api/products/categories/?parent=null   → uniquement les racines
+    GET  /api/products/categories/?parent={id}   → enfants d'un parent
+    POST/PUT/PATCH/DELETE → admin uniquement
     """
-    serializer_class   = CategorySerializer
-    lookup_field       = 'slug'
+    serializer_class = CategorySerializer
+    lookup_field     = 'slug'
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
-        qs = Category.objects.all() \
-            .select_related('parent') \
-            .prefetch_related('children', 'children__children') \
-            .annotate(
-                # Nombre de produits ACTIVE par catégorie — 0 requête extra
-                _product_count=Count(
-                    'products',
-                    filter=Q(products__status='ACTIVE'),
-                    distinct=True
-                )
-            )
+        qs = Category.objects.all().prefetch_related(
+            'children', 'children__children', 'children__products', 'products'
+        ).select_related('parent')
 
+        # Filtre sur le parent
         parent_param = self.request.query_params.get('parent', None)
-        if parent_param in ('null', 'none'):
+        if parent_param == 'null' or parent_param == 'none':
             qs = qs.filter(parent=None)
         elif parent_param is not None:
             try:
@@ -107,48 +104,22 @@ class CategoryViewSet(viewsets.ModelViewSet):
             except ValueError:
                 pass
 
+        # Admin voit tout, sinon uniquement actives + racines
         if not (self.request.user.is_authenticated and (
             self.request.user.is_staff or
             getattr(self.request.user, 'is_admin', False)
         )):
             qs = qs.filter(is_active=True)
+            # Si pas de filtre parent explicite → seulement les racines (défaut public)
             if parent_param is None:
                 qs = qs.filter(parent=None)
 
         return qs.order_by('order', 'name')
 
-    def perform_destroy(self, instance):
-        """Soft-delete si des produits sont liés (FK PROTECT)."""
-        try:
-            instance.delete()
-        except ProtectedError:
-            instance.is_active = False
-            instance.save(update_fields=['is_active'])
-            instance.children.all().update(is_active=False)
-
 
 # ─────────────────────────────────────────────────────────────
 #  PRODUITS — VUE PUBLIQUE
 # ─────────────────────────────────────────────────────────────
-
-def _product_qs_with_annotations(base_qs, *, with_reviews=False):
-    """
-    Centralise les annotations de performance sur un queryset produit.
-    Injecte _avg_rating et _review_count → utilisés par les @property
-    du modèle sans requête supplémentaire.
-    with_reviews=True : prefetch reviews (page détail seulement).
-    """
-    qs = base_qs \
-        .select_related('category') \
-        .prefetch_related('images') \
-        .annotate(
-            _avg_rating=Avg('reviews__rating'),
-            _review_count=Count('reviews', distinct=True),
-        )
-    if with_reviews:
-        qs = qs.prefetch_related('reviews__user')
-    return qs
-
 
 class ProductViewSet(viewsets.ModelViewSet):
     """
@@ -165,17 +136,35 @@ class ProductViewSet(viewsets.ModelViewSet):
     lookup_field       = 'slug'
 
     def get_queryset(self):
-        is_admin = self.request.user.is_authenticated and getattr(self.request.user, 'is_admin', False)
-        base = Product.objects.all() if is_admin else Product.objects.filter(status=Product.Status.ACTIVE)
-        with_rev = self.action == 'retrieve'
-        return _product_qs_with_annotations(base, with_reviews=with_rev)
+        user = self.request.user
+        is_admin = (
+            user.is_authenticated and (
+                user.is_staff or
+                getattr(user, 'is_admin', False) or
+                getattr(user, 'role', '') == 'ADMIN'
+            )
+        )
+        # Admin voit tous les statuts (ACTIVE + INACTIVE + DRAFT)
+        if is_admin:
+            return Product.objects.all().select_related('category').prefetch_related('images', 'reviews')
+        return Product.objects.filter(
+            status=Product.Status.ACTIVE
+        ).select_related('category').prefetch_related('images', 'reviews')
 
     def get_serializer_class(self):
-        # Admins : serialiseur complet (tous statuts + champs éditables)
-        if self.request.user.is_authenticated and getattr(self.request.user, 'is_admin', False):
+        user = self.request.user
+        is_admin = (
+            user.is_authenticated and (
+                user.is_staff or
+                getattr(user, 'is_admin', False) or
+                getattr(user, 'role', '') == 'ADMIN'
+            )
+        )
+        if is_admin:
             return AdminProductSerializer
-        # Clients / visiteurs : liste légère, détail complet (avec reviews)
-        return ProductListSerializer if self.action == 'list' else ProductDetailSerializer
+        if self.action == 'list':
+            return ProductListSerializer
+        return ProductDetailSerializer
 
     def retrieve(self, request, *args, **kwargs):
         """Incrémenter le compteur de vues"""
@@ -183,19 +172,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         Product.objects.filter(pk=instance.pk).update(view_count=instance.view_count + 1)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-
-    def perform_destroy(self, instance):
-        """Soft-delete si OrderItem liés (FK PROTECT), sinon suppression réelle."""
-        if OrderItem.objects.filter(product=instance).exists():
-            instance.status = Product.Status.INACTIVE
-            instance.save(update_fields=['status'])
-        else:
-            try:
-                instance.delete()
-            except ProtectedError:
-                raise ValidationError(
-                    "Ce produit est référencé et ne peut pas être supprimé."
-                )
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def review(self, request, slug=None):
@@ -210,22 +186,25 @@ class ProductViewSet(viewsets.ModelViewSet):
             new_rating = None
 
         if existing:
+            # Un avis existe — autoriser la mise à jour UNIQUEMENT si la nouvelle note est supérieure
             if new_rating is None or new_rating <= existing.rating:
                 return Response(
                     {
                         'error': 'already_rated',
-                        'message': f'Vous avez déjà noté ce produit ({existing.rating}/5). '
-                                   f'Vous pouvez mettre à jour uniquement avec une note supérieure.',
+                        'message': f'Vous avez déjà noté ce produit ({existing.rating}/5). Vous pouvez mettre à jour uniquement avec une note supérieure.',
                         'existing_rating': existing.rating,
                     },
                     status=status.HTTP_409_CONFLICT
                 )
+            # Mise à jour autorisée
             serializer = ReviewSerializer(existing, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            # Recalcul de la note moyenne
             product.refresh_from_db()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
+        # Pas d'avis existant — création
         serializer = ReviewSerializer(data=request.data)
         is_verified = OrderItem.objects.filter(
             order__user=request.user,
@@ -239,20 +218,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """GET /api/products/featured/ → produits mis en avant"""
-        qs = _product_qs_with_annotations(
-            Product.objects.filter(status=Product.Status.ACTIVE, is_featured=True)
-        )[:12]
+        qs = Product.objects.filter(
+            status=Product.Status.ACTIVE, is_featured=True
+        ).select_related('category')[:12]
         return Response(ProductListSerializer(qs, many=True).data)
 
     @action(detail=True, methods=['get'], url_path='similar')
     def similar(self, request, slug=None):
         """GET /api/products/{slug}/similar/ → produits similaires (même catégorie)"""
         product = self.get_object()
-        qs = _product_qs_with_annotations(
-            Product.objects.filter(
-                status=Product.Status.ACTIVE,
-                category=product.category,
-            ).exclude(pk=product.pk).order_by('-is_featured', '-purchase_count', '-view_count')
+        qs = Product.objects.filter(
+            status=Product.Status.ACTIVE,
+            category=product.category,
+        ).exclude(pk=product.pk).select_related('category').prefetch_related('images').order_by(
+            '-is_featured', '-purchase_count', '-view_count'
         )[:8]
         return Response(ProductListSerializer(qs, many=True).data)
 
@@ -275,7 +254,7 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     lookup_field       = 'slug'
 
     def get_queryset(self):
-        return _product_qs_with_annotations(Product.objects.all())
+        return Product.objects.all().select_related('category').prefetch_related('images')
 
 
 class AdminCategoryViewSet(viewsets.ModelViewSet):
@@ -288,15 +267,12 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
     lookup_field       = 'slug'
 
     def get_queryset(self):
-        return Category.objects.all() \
-            .prefetch_related('children') \
-            .annotate(
-                _product_count=Count(
-                    'products',
-                    filter=Q(products__status='ACTIVE'),
-                    distinct=True
-                )
-            )
+        return Category.objects.all().prefetch_related('children')
+
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
+from .models import ProductImage
+from .serializers import ProductImageSerializer
 
 class ProductImageViewSet(viewsets.ModelViewSet):
     """
@@ -304,8 +280,8 @@ class ProductImageViewSet(viewsets.ModelViewSet):
     CRUD pour la galerie d'images d'un produit
     """
     permission_classes = [IsAdmin]
-    serializer_class   = ProductImageSerializer
-    parser_classes     = [MultiPartParser, FormParser]
+    serializer_class = ProductImageSerializer
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         product = get_object_or_404(Product, slug=self.kwargs['product_slug'])
@@ -315,21 +291,29 @@ class ProductImageViewSet(viewsets.ModelViewSet):
         product = get_object_or_404(Product, slug=self.kwargs['product_slug'])
         serializer.save(product=product)
 
+import os
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
 class ProductImageDirectView(APIView):
     """
     DELETE /api/products/images/{pk}/
     Suppression directe d'une image par son ID, sans slug produit.
+    Utilisé par l'interface admin (ProductsTab) lors de la modification d'un produit.
     """
     permission_classes = [IsAdmin]
 
     def delete(self, request, pk):
         img = get_object_or_404(ProductImage, pk=pk)
+        # Supprimer le fichier physique si existant
         if img.image and hasattr(img.image, 'path'):
             try:
                 if os.path.isfile(img.image.path):
                     os.remove(img.image.path)
             except Exception:
-                pass
+                pass  # On ne bloque pas si le fichier est déjà absent
         img.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+        

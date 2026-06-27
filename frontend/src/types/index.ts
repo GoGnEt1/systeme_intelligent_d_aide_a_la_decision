@@ -68,6 +68,7 @@ export interface Category {
   is_active: boolean;
   order: number;
   product_count?: number;
+  children_product_count?: number;
 }
 
 export interface ProductImage {

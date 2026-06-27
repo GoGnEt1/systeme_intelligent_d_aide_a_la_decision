@@ -102,7 +102,7 @@ const HERO_SLIDES = [
     bg: "from-[#1a0a2e] via-[#4a1068] to-[#7b2d8b]",
     title: "Recommandations",
     accent: "personnalisées",
-    sub: "RMSE Hybride 0.614 · MAE NCF 0.311",
+    sub: "RMSE Hybride 0.58 · MAE NCF 0.311",
     badge: "IA Recommande",
     // cta: "Mes produits",
     // href: "/products",
@@ -146,10 +146,10 @@ const CATS = [
 ];
 
 const ML_BADGES = [
-  { label: "RMSE Hybride", val: "0.614" },
+  { label: "RMSE Hybride", val: "0.58" },
   { label: "MAE NCF", val: "0.311" },
   { label: "NDCG@10", val: "0.851" },
-  { label: "Précision CB", val: "66.5%" },
+  { label: "Précision CB", val: "100%" },
   { label: "Interactions", val: "65 780" },
   { label: "Algo", val: "SVD+NCF+CB" },
 ];

@@ -604,11 +604,11 @@ export const selectForecastSummary = createSelector(sel, (s) => {
     sum.model_performance = {
       MAE:
         mp.MAE?.value != null
-          ? `${Math.round(mp.MAE.value).toLocaleString()} unités`
+          ? `${Math.round(mp.MAE.value).toLocaleString()} DT`
           : "N/A",
       RMSE:
         mp.RMSE?.value != null
-          ? `${Math.round(mp.RMSE.value).toLocaleString()} unités`
+          ? `${Math.round(mp.RMSE.value).toLocaleString()} DT`
           : "N/A",
       MAPE: mp.MAPE?.value != null ? `${mp.MAPE.value.toFixed(2)}%` : "N/A",
       R2: mp.R2?.value != null ? `${mp.R2.value.toFixed(4)}` : "N/A",

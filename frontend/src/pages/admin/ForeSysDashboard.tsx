@@ -1,16 +1,27 @@
-// src/pages/admin/ForeSysDashboard.tsx — CORRIGÉ v2
+// src/pages/admin/ForeSysDashboard.tsx — CORRIGÉ v3
 // ═══════════════════════════════════════════════════════════════════════════
+// CORRECTIFS :
 //   - Métriques lues depuis /forecast/metrics (valeurs numériques parsées)
 //   - Hyperparamètres depuis /forecast/health ou /forecast/metrics
 //   - Export rapport utilise metrics_parsed pour remplir nulls
 //   - Training period depuis metadata correctement formatée
+//   - v3 : Suppression suffixes k/M — affichage complet locale fr-FR
+//          (ex : 88 159 unités, 1 234 567) — rendu professionnel
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useEffect, useCallback, useMemo, memo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+  useRef,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../store";
 import * as d3 from "d3";
 import {
+  AreaChart,
   Area,
   BarChart,
   Bar,
@@ -42,8 +53,10 @@ import {
   FiInfo,
   FiCpu,
   FiDatabase,
+  FiTarget,
   FiArrowUp,
   FiArrowDown,
+  FiLayers,
   FiClock,
 } from "react-icons/fi";
 
@@ -62,6 +75,7 @@ import {
   selectPredLoading,
   selectForecastHistory,
   selectHistoryLoading,
+  selectComponents,
   selectWeeklyProfile,
   selectYearlyProfile,
   selectForecastMetrics,
@@ -117,12 +131,12 @@ const C_LIGHT = {
 const C = C_DARK;
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
-const fmt = (n: number) =>
-  n >= 1_000_000
-    ? `${(n / 1_000_000).toFixed(2)}M`
-    : n >= 1_000
-      ? `${(n / 1_000).toFixed(1)}k`
-      : n.toLocaleString();
+/**
+ * Formate un nombre entier avec séparateurs de milliers (fr-FR).
+ * Aucune abréviation (k / M) — rendu professionnel exigé.
+ * Exemple : 1 234 567  |  88 159  |  70 425
+ */
+const fmt = (n: number): string => Math.round(n).toLocaleString("fr-FR");
 
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
@@ -202,7 +216,7 @@ const KPICard = memo(({ label, value, sub, icon, color, trend }: any) => {
               }}
             >
               {trend >= 0 ? <FiArrowUp size={11} /> : <FiArrowDown size={11} />}
-              {Math.abs(trend).toFixed(1)}%
+              {Math.abs(trend).toFixed(1)} %
             </span>
           )}
           {sub && <span style={{ color: C.muted }}>{sub}</span>}
@@ -520,8 +534,8 @@ const ExportBtn = memo(
           return key === "R2"
             ? v.toFixed(4)
             : key === "MAPE"
-              ? `${v.toFixed(2)}%`
-              : `${Math.round(v).toLocaleString()} unités`;
+              ? `${v.toFixed(2)} %`
+              : `${Math.round(v).toLocaleString("fr-FR")} DT`;
         }
         return summary?.model_performance?.[key] ?? "N/A";
       },
@@ -542,18 +556,18 @@ const ExportBtn = memo(
         ``,
         `━━━ PÉRIODE D'ENTRAÎNEMENT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         `Période   : ${summary.training_period}`,
-        `Durée     : ${summary.n_training_days?.toLocaleString() ?? "N/A"} jours`,
+        `Durée     : ${summary.n_training_days?.toLocaleString("fr-FR") ?? "N/A"} jours`,
         ``,
         `━━━ PÉRIODE DE PRÉVISION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         `Du ${summary.forecast_period.start} au ${summary.forecast_period.end}`,
         `Horizon   : ${summary.forecast_horizon} jours`,
         ``,
         `━━━ INDICATEURS CLÉS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        `Moyenne journalière : ${summary.kpis.avg_daily_forecast.toLocaleString()} unités`,
-        `Total 30 jours      : ${summary.kpis.total_30d_forecast.toLocaleString()} unités`,
-        `Pic de ventes       : ${summary.kpis.peak_day.date} (${summary.kpis.peak_day.value.toLocaleString()} u.)`,
-        `Creux de ventes     : ${summary.kpis.trough_day.date} (${summary.kpis.trough_day.value.toLocaleString()} u.)`,
-        `Tendance            : ${summary.kpis.trend_direction} (${summary.kpis.trend_pct_change >= 0 ? "+" : ""}${summary.kpis.trend_pct_change}%)`,
+        `Moyenne journalière : ${Math.round(summary.kpis.avg_daily_forecast).toLocaleString("fr-FR")} DT`,
+        `Total 30 jours      : ${Math.round(summary.kpis.total_30d_forecast).toLocaleString("fr-FR")} DT`,
+        `Pic de ventes       : ${summary.kpis.peak_day.date} (${Math.round(summary.kpis.peak_day.value).toLocaleString("fr-FR")} DT)`,
+        `Creux de ventes     : ${summary.kpis.trough_day.date} (${Math.round(summary.kpis.trough_day.value).toLocaleString("fr-FR")} DT)`,
+        `Tendance            : ${summary.kpis.trend_direction} (${summary.kpis.trend_pct_change >= 0 ? "+" : ""}${summary.kpis.trend_pct_change} %)`,
         ``,
         `━━━ PERFORMANCE DU MODÈLE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         `MAE  : ${getMetricStr("MAE")}`,
@@ -681,15 +695,12 @@ const MetricsTab = memo(({ metrics }: { metrics: any }) => {
       subject: "Précision",
       A:
         metrics.MAPE?.value != null
-          ? Math.max(0, 100 - metrics.MAPE.value * 3)
+          ? Math.max(0, 100 - metrics.MAPE.value * 5)
           : 0,
     },
     {
       subject: "Robustesse",
-      A:
-        metrics.R2?.value != null
-          ? Math.max(0, Math.min(100, metrics.R2.value * 100))
-          : 0,
+      A: metrics.R2?.value != null ? Math.min(100, metrics.R2.value * 100) : 0,
     },
     { subject: "Stabilité", A: 75 },
     { subject: "Horizon", A: 85 },
@@ -730,9 +741,7 @@ const MetricsTab = memo(({ metrics }: { metrics: any }) => {
                   ? m.value.toFixed(2)
                   : key === "R²"
                     ? m.value.toFixed(4)
-                    : m.value >= 1000
-                      ? `${(m.value / 1000).toFixed(1)}k`
-                      : m.value.toFixed(0)
+                    : Math.round(m.value).toLocaleString("fr-FR")
                 : "N/A"}
               <span style={{ fontSize: 13, color: C.muted, marginLeft: 3 }}>
                 {m?.unit}
@@ -741,7 +750,7 @@ const MetricsTab = memo(({ metrics }: { metrics: any }) => {
             <div style={{ marginTop: 4, fontSize: 13, fontWeight: 700, color }}>
               {key}
             </div>
-            {(m?.quality || key === "R²") && (
+            {m?.quality && (
               <div
                 style={{
                   marginTop: 8,
@@ -754,15 +763,7 @@ const MetricsTab = memo(({ metrics }: { metrics: any }) => {
                   fontWeight: 600,
                 }}
               >
-                {key === "R²" && m?.value != null
-                  ? m.value >= 0.4
-                    ? "Bon"
-                    : m.value >= 0.1
-                      ? "Acceptable"
-                      : m.value >= 0
-                        ? "Faible"
-                        : "Données synth."
-                  : m?.quality}
+                {m.quality}
               </div>
             )}
           </div>
@@ -864,7 +865,7 @@ const MetricsTab = memo(({ metrics }: { metrics: any }) => {
               {metrics.training_start && metrics.training_end
                 ? `${metrics.training_start} → ${metrics.training_end}`
                 : "—"}{" "}
-              · {metrics.n_training_days?.toLocaleString() ?? "—"} jours
+              · {metrics.n_training_days?.toLocaleString("fr-FR") ?? "—"} jours
             </div>
           </div>
         </div>
@@ -1119,7 +1120,7 @@ const ForeSysDashboard: React.FC = () => {
           label="Tendance"
           value={
             kpis
-              ? `${kpis.trendPct >= 0 ? "+" : ""}${kpis.trendPct.toFixed(1)}%`
+              ? `${kpis.trendPct >= 0 ? "+" : ""}${kpis.trendPct.toFixed(1)} %`
               : "—"
           }
           sub={kpis ? (kpis.trendUp ? "haussière" : "baissière") : ""}
@@ -1228,7 +1229,9 @@ const ForeSysDashboard: React.FC = () => {
                   tick={{ fill: C.muted, fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  tickFormatter={(v: number) =>
+                    Math.round(v).toLocaleString("fr-FR")
+                  }
                 />
                 <Tooltip content={<CT />} />
                 <Legend
@@ -1333,7 +1336,7 @@ const ForeSysDashboard: React.FC = () => {
                         fontWeight: 700,
                       }}
                     >
-                      {Math.round(p.prediction).toLocaleString()}
+                      {Math.round(p.prediction).toLocaleString("fr-FR")}
                     </td>
                     <td
                       style={{
@@ -1342,7 +1345,7 @@ const ForeSysDashboard: React.FC = () => {
                         color: C.danger,
                       }}
                     >
-                      {Math.round(p.pred_lower).toLocaleString()}
+                      {Math.round(p.pred_lower).toLocaleString("fr-FR")}
                     </td>
                     <td
                       style={{
@@ -1351,7 +1354,7 @@ const ForeSysDashboard: React.FC = () => {
                         color: C.success,
                       }}
                     >
-                      {Math.round(p.pred_upper).toLocaleString()}
+                      {Math.round(p.pred_upper).toLocaleString("fr-FR")}
                     </td>
                     <td
                       style={{
@@ -1360,7 +1363,7 @@ const ForeSysDashboard: React.FC = () => {
                         color: C.muted,
                       }}
                     >
-                      {Math.round(p.trend).toLocaleString()}
+                      {Math.round(p.trend).toLocaleString("fr-FR")}
                     </td>
                   </tr>
                 ))}
@@ -1384,9 +1387,9 @@ const ForeSysDashboard: React.FC = () => {
             <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700 }}>
               Historique Mensuel des Ventes
             </h3>
-            {/* <p style={{ color: C.muted, fontSize: 12, margin: "0 0 16px" }}>
+            <p style={{ color: C.muted, fontSize: 12, margin: "0 0 16px" }}>
               Données Kaggle Store Sales 2013–2017 ({history.length} mois)
-            </p> */}
+            </p>
             {histLoading ? (
               <div style={{ textAlign: "center", color: C.muted, padding: 40 }}>
                 Chargement…
@@ -1424,7 +1427,9 @@ const ForeSysDashboard: React.FC = () => {
                     tick={{ fill: C.muted, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    tickFormatter={(v: number) =>
+                      Math.round(v).toLocaleString("fr-FR")
+                    }
                   />
                   <Tooltip content={<CT />} />
                   <Bar
@@ -1533,7 +1538,9 @@ const ForeSysDashboard: React.FC = () => {
                   tick={{ fill: C.muted, fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  tickFormatter={(v: number) =>
+                    Math.round(v).toLocaleString("fr-FR")
+                  }
                 />
                 <Tooltip content={<CT />} />
                 <Line
